@@ -524,16 +524,16 @@ class local_artena_external extends external_api {
         global $CFG, $DB;
         require_once($CFG->dirroot . "/group/lib.php");
 
-self::log_for_artena('create_group','BEGIN',1);        
-self::log_for_artena('create_group',print_r($groups,1));        
+self::log_for_artena('create_group','BEGIN',1);
+self::log_for_artena('create_group',print_r($groups,1));
 
         $resultgroups = array();
-        $params = self::validate_parameters(self::create_group_parameters(),array('groups' => $groups));        
+        $params = self::validate_parameters(self::create_group_parameters(),array('groups' => $groups));
 
         $transaction = $DB->start_delegated_transaction();
 
         foreach ($params['groups'] as $group) {
-self::log_for_artena('create_group',print_r($group,1));                
+self::log_for_artena('create_group',print_r($group,1));
 
             // Check if this is a create or update request
             $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
@@ -576,21 +576,21 @@ self::log_for_artena('create_group',"GROUP:\n".print_r($existing_group,1));
                 $new_group['id'] = groups_create_group((object)$new_group, false);
 self::log_for_artena('create_group',print_r($new_group,1));
                 $resultgroups[] = array('id' => $new_group['id'], 'name' => $new_group['name'], 'action'=> 'insert');
-                
+
             } else {    // update
 self::log_for_artena('create_group','UPDATE');
                 $existing_group->description = $group['groupdescription'];
 self::log_for_artena('create_group',print_r($existing_group,1));
                 $existing_group->descriptionformat = FORMAT_HTML;
                 groups_update_group((object)$existing_group, false);
-                
-                $resultgroups[] = array('id' => $existing_group->id, 'name' => $group['groupidnumber'], 'action'=> 'update');                
+
+                $resultgroups[] = array('id' => $existing_group->id, 'name' => $group['groupidnumber'], 'action'=> 'update');
             }
         }
 
         $transaction->allow_commit();
 
-self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));        
+self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));
         return $resultgroups;
     }
 
@@ -609,7 +609,7 @@ self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));
                 )
             )
         );
-    }    
+    }
 
    /**
      * Returns description of method parameters
@@ -645,11 +645,11 @@ self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));
         global $CFG, $DB;
         require_once($CFG->dirroot . "/group/lib.php");
 
-self::log_for_artena('remove_group','BEGIN',1);        
-self::log_for_artena('remove_group',print_r($groups,1));        
+self::log_for_artena('remove_group','BEGIN',1);
+self::log_for_artena('remove_group',print_r($groups,1));
 
         $resultgroups = array();
-        $params = self::validate_parameters(self::remove_group_parameters(),array('groups' => $groups));        
+        $params = self::validate_parameters(self::remove_group_parameters(),array('groups' => $groups));
 
         $transaction = $DB->start_delegated_transaction();
 
@@ -688,15 +688,15 @@ self::log_for_artena('remove_group',"GROUP:\n".print_r($existing_group,1));
             if (false === $existing_group) {
                 $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action' => 'skip');
                 continue;
-            }                
+            }
             groups_delete_group($existing_group->id);
-            
-            $resultgroups[] = array('idnumber' => $group['groupidnumber'], 'action'=> 'delete');                
+
+            $resultgroups[] = array('idnumber' => $group['groupidnumber'], 'action'=> 'delete');
         }
 
         $transaction->allow_commit();
 
-self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));        
+self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
         return $resultgroups;
     }
 
@@ -714,8 +714,8 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
                 )
             )
         );
-    }       
-    
+    }
+
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -1181,10 +1181,10 @@ self::log_for_artena('create_enrol',print_r($existing_group,1));
                 foreach ($existing_memberships as $membership) {
                     if ($membership->id <> $existing_group->id)
                         groups_remove_member($existing_group->id, $existing_user->id);
-                }            
+                }
                 groups_add_member($existing_group->id, $existing_user->id);
             }
-         
+
             // reset accessibility/visibility
             if (true == $flip_visible) {
               if (!$link_retrieve) {

@@ -78,7 +78,7 @@ $functions = array(
         'description' => 'Create groups.',
         'type'        => 'write',
         'capabilities'=> 'moodle/course:managegroups',
-    ),    
+    ),
 
     'artena_remove_group' => array(
         'classname'   => 'local_artena_external',
@@ -87,8 +87,8 @@ $functions = array(
         'description' => 'Remove groups.',
         'type'        => 'write',
         'capabilities'=> 'moodle/course:managegroups',
-    ),   
-        
+    ),
+
     'artena_create_user' => array(
         'classname'   => 'local_artena_external',
         'methodname'  => 'create_user',
