@@ -1170,7 +1170,7 @@ self::log_for_artena('create_enrol',print_r($assignment,1));
 
             // assign group, if required
 self::log_for_artena('create_enrol','get group');
-            if ('' <> $assignment['groupidnumber']) {
+            if (!empty($assignment['groupidnumber'])) {
                 //$existing_group = groups_get_group_by_name($existing_course->id, $assignment['groupidnumber']);
                 $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $assignment['groupidnumber']));
 self::log_for_artena('create_enrol',print_r($existing_group,1));
@@ -1179,7 +1179,7 @@ self::log_for_artena('create_enrol',print_r($existing_group,1));
                 }
                 $existing_memberships = groups_get_user_groups($existing_course->id, $existing_user->id);
                 foreach ($existing_memberships as $membership) {
-                    if ($membership->id <> $existing_group->id)
+                    if ($membership->id != $existing_group->id)
                         groups_remove_member($existing_group->id, $existing_user->id);
                 }
                 groups_add_member($existing_group->id, $existing_user->id);
