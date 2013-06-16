@@ -1066,7 +1066,7 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
     public static function create_enrol($assignments) {
         global $CFG, $DB;
         require_once($CFG->libdir . '/enrollib.php');
-        require_once($CFG->dirroot."/group/lib.php");
+        require_once($CFG->dirroot . '/group/lib.php');
         require_once($CFG->libdir . '/grouplib.php');
 
         // Do basic automatic PARAM checks on incoming data, using params description
