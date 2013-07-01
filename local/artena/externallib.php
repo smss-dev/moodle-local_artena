@@ -537,7 +537,7 @@ self::log_for_artena('create_group',print_r($group,1));
 
             // Check if this is a create or update request
             $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
-            if ((false === $existing_course) && (1 == $course['link_courses'])) {
+            if ((false === $existing_course) && (1 == $group['link_courses'])) {
                 $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
             }
 self::log_for_artena('create_group',print_r($existing_course,1));
@@ -657,7 +657,7 @@ self::log_for_artena('remove_group',print_r($groups,1));
 
             // Check if the expected associated course exists
             $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
-            if ((false === $existing_course) && (1 == $course['link_courses'])) {
+            if ((false === $existing_course) && (1 == $group['link_courses'])) {
                 $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
             }
 
