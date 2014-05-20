@@ -1333,9 +1333,106 @@ self::log_for_artena('create_enrol',print_r($existing_group,1));
         return null;
     }
 
+
+   /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_grades_parameters() {
+        return new external_function_parameters(
+            array(
+                'academicrecords' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            // artena supplies
+                            'username' => new external_value(PARAM_RAW, 'The user whose grade will be retrieved'),
+                            'fullname' => new external_value(PARAM_TEXT, 'full name'),
+                            'shortname' => new external_value(PARAM_TEXT, 'course short name'),
+                            'idnumber' => new external_value(PARAM_RAW, 'id number', VALUE_OPTIONAL),
+                            'startdate' => new external_value(PARAM_INT, 'timestamp when the enrolment starts', VALUE_OPTIONAL),
+                            'finishdate' => new external_value(PARAM_INT, 'timestamp when the enrolment ends', VALUE_OPTIONAL),
+                            'link_courses' => new external_value(PARAM_INT, 'ARTENA FIELD (1: link courses of same name, 0: treat all as distinct)', VALUE_OPTIONAL),
+                        )
+                    ), 'courses for which to retrieve grades'
+                )
+            )
+        );
+    }
+
+    /**
+     * Get grades
+     * @param array $grades
+     * @return array grades (course, student, final grade)
+     */
+    public static function get_grades($academicrecords) {
+        global $CFG, $DB;
+        //self::log_for_artena('get_grades','BEGIN ' . print_r($courses,1),1);
+
+        $params = self::validate_parameters(self::get_grades_parameters(), array('academicrecords'=>$academicrecords));
+
+        $transaction = $DB->start_delegated_transaction();
+        foreach ($params['academicrecords'] as $ar) {
+
+            // get student
+            $student = $DB->get_record('user', array('username' => $ar['username']));
+            if (false === $student) {
+                continue;
+            }
+
+            // get course
+            $existing_course = $DB->get_record('course', array('idnumber' => $ar['idnumber']));
+            if ((false === $existing_course) && (1 == $ar['link_courses'])) {
+                $existing_course = $DB->get_record('course', array('fullname' => $ar['fullname'], 'shortname' => $ar['shortname']));
+            }
+
+            if (false === $existing_course) {
+                continue;
+            }
+
+            // get grades
+            $grade_item = $DB->get_record('grade_items', array('courseid' => $existing_course->id, 'itemtype' => 'course'));
+            $grades = $DB->get_records('grade_grades', array('itemid' => $grade_item->id, 'userid' => $student->id));
+
+            foreach ($grades as $grade) {
+
+                // populate return structure
+                //
+                $resultgrades[] = array(
+                    'courseid' => $ar['idnumber'],
+                    'studentid' => $student->idnumber,
+                    'startdate' => $ar['startdate'],
+                    'finishdate' => $ar['finishdate'],
+                    'result' => $grade->finalgrade,
+                    );
+            }
+        }
+        self::log_for_artena('get_grades','END ' . print_r($resultgrades,1));
+        $transaction->allow_commit();
+
+        return $resultgrades;
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_grades_returns() {
+        return new external_multiple_structure(
+            new external_single_structure(
+                array(
+                    'courseid' => new external_value(PARAM_RAW, 'course id number'),
+                    'studentid'  => new external_value(PARAM_RAW, 'student id number'),
+                    'startdate' => new external_value(PARAM_INT, 'timestamp when the enrolment starts', VALUE_OPTIONAL),
+                    'finishdate' => new external_value(PARAM_INT, 'timestamp when the enrolment ends', VALUE_OPTIONAL),
+                    'result'  => new external_value(PARAM_FLOAT, 'final grade'),
+                )
+            )
+        );
+    }
+
     public static function log_for_artena($method,$data,$new=0) {
 	// comment this out to enable logging
-	return;
+
         if (1 == $new) {
             $fp = @fopen($method.'.log','w+');
         } else {
