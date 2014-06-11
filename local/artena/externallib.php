@@ -1238,6 +1238,7 @@ self::log_for_artena('create_enrol',print_r($existing_group,1));
                             'fullname'      => new external_value(PARAM_TEXT, 'course full name'),
                             'shortname'     => new external_value(PARAM_TEXT, 'course short name'),
                             'idnumber'      => new external_value(PARAM_RAW, 'id of the course to assign to the user'),
+							'groupidnumber' => new external_value(PARAM_RAW, 'group id number'),
                             'roleid'        => new external_value(PARAM_INT, 'id of the role (student,tutor) to assign'),
                             'action'        => new external_value(PARAM_RAW, 'indication to delete or suspend the enrolment'),
                             'link_courses'  => new external_value(PARAM_INT, 'ARTENA FIELD (1: link courses of same name, 0:treat all as distinct)', VALUE_OPTIONAL),
