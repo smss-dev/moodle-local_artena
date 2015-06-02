@@ -14,19 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+
 /**
- * Version details.
+ * Local Redirect
+ *
+ * This local plugin enrols and redirects users to a pre-configured course after login
  *
  * @package    local
- * @subpackage artena
- * @copyright  2013 SMSS
+ * @subpackage local_artena
+ * @copyright  2014 SMSS, www.smss.org.nz
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die;
-
-$plugin->version   = 2015060200;
-$plugin->release   = '9.10.0';
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->requires  = 2011120500; // Moodle 2.2 release and upwards
-$plugin->component = 'local_artena';
+$string['pluginname'] = 'Artena Integration';
+$string['enabled'] = 'Enabled';
+$string['enabled_desc'] = 'Enable Artena Integration plugin for Moodle';

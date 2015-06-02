@@ -14,19 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+
 /**
- * Version details.
+ * Local Redirect
+ *
+ * This local plugin that adds a 'friendly url' version of Artena Integration plugin
+ * to Moodle
  *
  * @package    local
- * @subpackage artena
- * @copyright  2013 SMSS
+ * @subpackage local_artena
+ * @copyright  2014 SMSS, www.smss.org.nz
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version   = 2015060200;
-$plugin->release   = '9.10.0';
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->requires  = 2011120500; // Moodle 2.2 release and upwards
-$plugin->component = 'local_artena';
+if ($hassiteconfig) {
+    global $CFG, $USER, $DB;
+
+    $moderator = get_admin();
+    $site = get_site();
+
+    $settings = new admin_settingpage('local_artena', get_string('pluginname', 'local_artena'));
+    $ADMIN->add('localplugins', $settings);
+
+    $name = 'local_artena/enabled';
+    $title = get_string('enabled', 'local_artena');
+    $description = get_string('enabled_desc', 'local_artena');
+    $setting = new admin_setting_configcheckbox($name, $title, $description, 1);
+    $settings->add($setting);
+
+}
+
