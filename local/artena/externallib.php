@@ -66,7 +66,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'result'   => new external_value(PARAM_TEXT, 'ping response (success)'),
+                    'result' => new external_value(PARAM_TEXT, 'ping response (success)'),
                 )
             )
         );
@@ -98,15 +98,23 @@ class local_artena_external extends external_api {
 
         $result = array();
         self::log_for_artena('get_categories','BEGIN',1);
-
-        if (false === ($categories = $DB->get_records('course_categories'))) {
-            self::log_for_artena('get_categories','found no categories!');
-            $result[] = array();
-        } else {
-            foreach ($categories as $category_record) {
-                self::log_for_artena('get_categories','found category:'.$category_record->name);
-                $result[] = array ('id' => $category_record->id, 'name' => $category_record->name, 'visible' => $category_record->visible, 'path' => $category_record->path, 'depth' => $category_record->depth);
+        try {
+            if (false === ($categories = $DB->get_records('course_categories'))) {
+                self::log_for_artena('get_categories','found no categories!');
+                $result[] = array();
+            } else {
+                foreach ($categories as $category_record) {
+                    self::log_for_artena('get_categories','found category:'.$category_record->name);
+                    $result[] = array ('id' => $category_record->id, 'name' => $category_record->name, 'visible' => $category_record->visible, 'path' => $category_record->path, 'depth' => $category_record->depth);
+                }
             }
+        }
+        catch (moodle_exception $e) {
+            self::log_for_artena('get_categories', 'moodle EXCEPTION! ' . $e->getMessage());
+            $result[] = array('id'=>-1, 'name'=>'', 'visible'=>0, 'path'=>'', 'depth'=>-1, 'message'=>$e->getMessage());
+        }
+        catch (Exception $e) {
+            self::log_for_artena('get_categories', 'EXCEPTION! ' . $e->getMessage());
         }
 
         return $result;
@@ -119,11 +127,12 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'id'          => new external_value(PARAM_INT, 'moodle category id'),
-                    'name'        => new external_value(PARAM_TEXT, 'category name'),
-                    'visible'    => new external_value(PARAM_INT, 'indication of category visibility'),
-                    'path'        => new external_value(PARAM_TEXT, 'category tree structure'),
-                    'depth'        => new external_value(PARAM_INT, 'category depth in tree'),
+                    'id' => new external_value(PARAM_INT, 'moodle category id'),
+                    'name' => new external_value(PARAM_TEXT, 'category name'),
+                    'visible' => new external_value(PARAM_INT, 'indication of category visibility'),
+                    'path' => new external_value(PARAM_TEXT, 'category tree structure'),
+                    'depth' => new external_value(PARAM_INT, 'category depth in tree'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -202,19 +211,18 @@ class local_artena_external extends external_api {
         $availablethemes = core_component::get_plugin_list('theme');
         $availablelangs = get_string_manager()->get_list_of_translations();
 
-self::log_for_artena('create_course', 'BEGIN', 1);
+        self::log_for_artena('create_course', 'BEGIN', 1);
         foreach ($params['courses'] as $course) {
             try {
-self::log_for_artena('create_course', print_r($course,1));
-
+                self::log_for_artena('create_course', print_r($course,1));
                 $transaction = $DB->start_delegated_transaction();
 
                 // Ensure the context for this category exists
                 $context = context_coursecat::instance($course['categoryid']);
                 if (false === $context) {   // unknown context
-                    throw new invalid_parameter_exception('Context does not exist for category: '.$course['categoryid']);
+                    throw new Exception('Context does not exist for category: '.$course['categoryid']);
                 }
-self::log_for_artena('create_course', print_r($context,1));
+                self::log_for_artena('create_course', print_r($context,1));
 
                 // Check if this is a create or update request
                 if ($course['link_courses']) {
@@ -224,20 +232,20 @@ self::log_for_artena('create_course', print_r($context,1));
                 }
 
                 if (false === $existing_course) {   // create
-self::log_for_artena('create_course', 'create course');
+                    self::log_for_artena('create_course', 'create course');
 
                     require_capability('moodle/course:create', $context);
 
                     // Make sure lang is valid
                     if (array_key_exists('lang', $course) and empty($availablelangs[$course['lang']])) {
-                        throw new invalid_parameter_exception(get_string('errorinvalidparam', 'webservice', 'lang'));
+                        throw new Exception(get_string('errorinvalidparam', 'webservice', 'lang'));
                     }
 
                     // Make sure theme is valid
                     if (array_key_exists('forcetheme', $course)) {
                         if (!empty($CFG->allowcoursethemes)) {
                             if (empty($availablethemes[$course['forcetheme']])) {
-                                throw new invalid_parameter_exception(get_string('errorinvalidparam', 'webservice', 'forcetheme'));
+                                throw new Exception(get_string('errorinvalidparam', 'webservice', 'forcetheme'));
                             } else {
                                 $course['theme'] = $course['forcetheme'];
                             }
@@ -265,15 +273,14 @@ self::log_for_artena('create_course', 'create course');
                     }
 
                     $course['category'] = $course['categoryid'];
-self::log_for_artena('create_course', 'new course obj=' . print_r($course,1));
+                    self::log_for_artena('create_course', 'new course obj=' . print_r($course,1));
                     //Note: create_course() core function check shortname, idnumber, category
                     $course['id'] = create_course((object) $course)->id;
-self::log_for_artena('create_course', 'new course id=' . $course['id']);
-                    $resultcourses[] = array('id' => $course['id'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'add');
+                    self::log_for_artena('create_course', 'new course id=' . $course['id']);
+                    $resultcourses[] = array('id' => $course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'add');
 
                 } else {    // update
-self::log_for_artena('create_course', 'update course');
-
+                    self::log_for_artena('create_course', 'update course');
                     $category = $DB->get_record('course_categories', array('id' => $course['categoryid']));
                     require_capability('moodle/course:update', $context);
 
@@ -286,21 +293,26 @@ self::log_for_artena('create_course', 'update course');
                     }
 
                     update_course((object) $updated_course);
-                    $resultcourses[] = array('id' => $course['id'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'update');
+                    $resultcourses[] = array('id' => $course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'update');
                 }
 
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('create_course', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                $resultcourses[] = array('id' => -1, 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => (isset($category) ? $category->name : ''), 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('create_course', 'moodle EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                $resultcourses[] = array('id' => -1, 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => (isset($category) ? $category->name : ''), 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('create_course', 'EXCEPTION! ' . $e->getMessage());
             }
         }
-self::log_for_artena('create_course', 'END');
+        self::log_for_artena('create_course', 'END');
         return $resultcourses;
     }
 
@@ -312,10 +324,12 @@ self::log_for_artena('create_course', 'END');
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'id'        => new external_value(PARAM_INT, 'course id'),
-                    'fullname'  => new external_value(PARAM_TEXT, 'full name'),
-                    'category'  => new external_value(PARAM_TEXT, 'course category'),
-                    'action'    => new external_value(PARAM_TEXT, 'action performed'),
+                    'id' => new external_value(PARAM_INT, 'course id'),
+                    'idnumber' => new external_value(PARAM_RAW, 'artena course idnumber'),
+                    'fullname' => new external_value(PARAM_TEXT, 'full name'),
+                    'category' => new external_value(PARAM_TEXT, 'course category'),
+                    'action' => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -360,41 +374,55 @@ self::log_for_artena('create_course', 'END');
         $params = self::validate_parameters(self::change_course_id_parameters(),
                         array('courses' => $courses));
 
-        $transaction = $DB->start_delegated_transaction();
 
         foreach ($params['courses'] as $course) {
+            try {
+                $transaction = $DB->start_delegated_transaction();
 
-            // Check if this is a create or update request
-            $existing_course = $DB->get_record('course', array('idnumber' => $course['idnumberold']));
+                // Check if this is a create or update request
+                $existing_course = $DB->get_record('course', array('idnumber' => $course['idnumberold']));
 
-            if (false === $existing_course) {
-                throw new moodle_exception('record does not exist!');
-            } else {
+                if (false === $existing_course) {
+                    throw new Exception('record does not exist!');
+                } else {
 
-                // Ensure the current user is allowed to run this function
-                $context = context_coursecat::instance($existing_course->category);
-                try {
-                    self::validate_context($context);
-                } catch (Exception $e) {
-                    $exceptionparam = new stdClass();
-                    $exceptionparam->message = $e->getMessage();
-                    $exceptionparam->catid = $existing_course->category;
-                    throw new moodle_exception(
-                            get_string('errorcatcontextnotvalid', 'webservice', $exceptionparam));
+                    // Ensure the current user is allowed to run this function
+                    $context = context_coursecat::instance($existing_course->category);
+                    try {
+                        self::validate_context($context);
+                    } catch (Exception $e) {
+                        $exceptionparam = new stdClass();
+                        $exceptionparam->message = $e->getMessage();
+                        $exceptionparam->catid = $existing_course->category;
+                        throw new moodle_exception(
+                                get_string('errorcatcontextnotvalid', 'webservice', $exceptionparam));
+                    }
+
+                    require_capability('moodle/course:update', $context);
+
+                    $existing_course->idnumber = $course['idnumbernew'];
+
+                    update_course((object) $existing_course);
+                    $updated_course = $DB->get_record('course', array('idnumber' => $course['idnumbernew']));
+                    $resultcourses[] = array('id' => $updated_course->id, 'idnumber' => $updated_course->idnumber, 'action' => 'update');
                 }
 
-                require_capability('moodle/course:update', $context);
+                $transaction->allow_commit();
 
-                $existing_course->idnumber = $course['idnumbernew'];
-
-                update_course((object) $existing_course);
-                $updated_course = $DB->get_record('course', array('idnumber' => $course['idnumbernew']));
-                $resultcourses[] = array('id' => $updated_course->id, 'idnumber' => $updated_course->idnumber);
+            } catch (invalid_parameter_exception $e) {
+                self::log_for_artena('change_course_id', 'invalid parameter EXCEPTION! ' . $e->getMessage());
+                $resultcourses[] = array('id' => -1, 'idnumber' => $course['idnumbernew'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-
+            catch (moodle_exception $e) {
+                self::log_for_artena('change_course_id', 'moodle EXCEPTION! ' . $e->getMessage());
+                $resultcourses[] = array('id' => -1, 'idnumber' => $course['idnumbernew'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('change_course_id', 'EXCEPTION! ' . $e->getMessage());
+            }
         }
-
-        $transaction->allow_commit();
 
         return $resultcourses;
     }
@@ -407,8 +435,10 @@ self::log_for_artena('create_course', 'END');
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'id'       => new external_value(PARAM_INT, 'course id'),
+                    'id' => new external_value(PARAM_INT, 'course id'),
                     'idnumber' => new external_value(PARAM_RAW, 'id number'),
+                    'action' => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -456,41 +486,57 @@ self::log_for_artena('create_course', 'END');
         $params = self::validate_parameters(self::remove_course_parameters(),
                         array('courses' => $courses));
 
-        $transaction = $DB->start_delegated_transaction();
-
         foreach ($params['courses'] as $course) {
+            try {
+                $transaction = $DB->start_delegated_transaction();
 
-            // Check if this is a create or update request
-            if ($course['link_courses']) {
-                $existing_course = $DB->get_record('course', array('fullname' => $course['fullname'], 'shortname' => $course['shortname']));
-            } else {
-                $existing_course = $DB->get_record('course', array('idnumber' => $course['idnumber']));
-            }
-
-            if (false === $existing_course) {   // unknown course
-                throw new invalid_parameter_exception('Unknown course: '.$course['idnumber']);
-            } else {
-
-                // Ensure the current user is allowed to run this function
-                $context = context_coursecat::instance($existing_course->category);
-                try {
-                    self::validate_context($context);
-                } catch (Exception $e) {
-                    $exceptionparam = new stdClass();
-                    $exceptionparam->message = $e->getMessage();
-                    $exceptionparam->catid = $existing_course->category;
-                    throw new moodle_exception(
-                            get_string('errorcatcontextnotvalid', 'webservice', $exceptionparam));
+                // Check if this is a create or update request
+                if ($course['link_courses']) {
+                    $existing_course = $DB->get_record('course', array('fullname' => $course['fullname'], 'shortname' => $course['shortname']));
+                } else {
+                    $existing_course = $DB->get_record('course', array('idnumber' => $course['idnumber']));
                 }
 
-                require_capability('moodle/course:delete', $context);
-                $result = delete_course((object) $existing_course, false);
-                $resultcourses[] = array('idnumber' => $existing_course->idnumber, 'result' => ($result==1)?'success':'failure');
+                if (false === $existing_course) {   // unknown course
+                    throw new Exception('Unknown course: '.$course['idnumber']);
+                } else {
+
+                    // Ensure the current user is allowed to run this function
+                    $context = context_coursecat::instance($existing_course->category);
+                    try {
+                        self::validate_context($context);
+                    } catch (Exception $e) {
+                        $exceptionparam = new stdClass();
+                        $exceptionparam->message = $e->getMessage();
+                        $exceptionparam->catid = $existing_course->category;
+                        throw new moodle_exception(
+                                get_string('errorcatcontextnotvalid', 'webservice', $exceptionparam));
+                    }
+
+                    require_capability('moodle/course:delete', $context);
+                    if (!delete_course((object) $existing_course, false)){
+                        throw new Exception('Unable to delete course: ' . $course['idnumber']);
+                    } else {
+                        $resultcourses[] = array('idnumber' => $existing_course->idnumber, 'action' => 'delete');
+                    }
+                }
+
+                $transaction->allow_commit();
+
+            } catch (invalid_parameter_exception $e) {
+                self::log_for_artena('remove_course', 'invalid parameter EXCEPTION! ' . $e->getMessage());
+                $resultcourses[] = array('idnumber' => $course['idnumber'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-
+            catch (moodle_exception $e) {
+                self::log_for_artena('remove_course', 'moodle EXCEPTION! ' . $e->getMessage());
+                $resultcourses[] = array('idnumber' => $course['idnumber'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('remove_course', 'EXCEPTION! ' . $e->getMessage());
+            }
         }
-
-        $transaction->allow_commit();
 
         return $resultcourses;
     }
@@ -504,7 +550,8 @@ self::log_for_artena('create_course', 'END');
             new external_single_structure(
                 array(
                     'idnumber'  => new external_value(PARAM_RAW, 'id number'),
-                    'result'    => new external_value(PARAM_RAW, 'result value'),
+                    'action' => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -549,75 +596,87 @@ self::log_for_artena('create_course', 'END');
         global $CFG, $DB;
         require_once($CFG->dirroot . "/group/lib.php");
 
-self::log_for_artena('create_group','BEGIN',1);
-self::log_for_artena('create_group',print_r($groups,1));
+        self::log_for_artena('create_group','BEGIN',1);
+        self::log_for_artena('create_group',print_r($groups,1));
 
         $resultgroups = array();
         $params = self::validate_parameters(self::create_group_parameters(),array('groups' => $groups));
 
-        $transaction = $DB->start_delegated_transaction();
-
         foreach ($params['groups'] as $group) {
-self::log_for_artena('create_group',print_r($group,1));
-
-            // Check if this is a create or update request
-            if ($course['link_courses']) {
-                $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
-            } else {
-                $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
-            }
-
-self::log_for_artena('create_group',print_r($existing_course,1));
-
-            if (false === $existing_course) {
-                //throw new invalid_parameter_exception('The course associated with the group does not exist');
-                $resultgroups[] = array('id' => -1, 'name' => $group['name'], 'action' => 'skip');
-                continue;
-            }
-
-            if (trim($group['groupidnumber']) == '') {
-                throw new invalid_parameter_exception('Invalid group name');
-            }
-
-            // now security checks
-            $context = context_course::instance($existing_course->id, IGNORE_MISSING);
             try {
-                self::validate_context($context);
-            } catch (Exception $e) {
-                $exceptionparam = new stdClass();
-                $exceptionparam->message = $e->getMessage();
-                $exceptionparam->courseid = $existing_course->courseid;
-                throw new moodle_exception('errorcoursecontextnotvalid' , 'webservice', '', $exceptionparam);
+                $transaction = $DB->start_delegated_transaction();
+                self::log_for_artena('create_group',print_r($group,1));
+
+                // Check if this is a create or update request
+                if ($course['link_courses']) {
+                    $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
+                } else {
+                    $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
+                }
+
+                if (false === $existing_course) {
+                    //throw new Exception('The course associated with the group does not exist');
+                    $resultgroups[] = array('id' => -1, 'name' => $group['name'], 'coursename' => $group['fullname'], 'action' => 'skip');
+                    continue;
+                }
+
+                if (trim($group['groupidnumber']) == '') {
+                    throw new Exception('Invalid group name');
+                }
+
+                // now security checks
+                $context = context_course::instance($existing_course->id, IGNORE_MISSING);
+                try {
+                    self::validate_context($context);
+                } catch (Exception $e) {
+                    $exceptionparam = new stdClass();
+                    $exceptionparam->message = $e->getMessage();
+                    $exceptionparam->courseid = $existing_course->courseid;
+                    throw new moodle_exception('errorcoursecontextnotvalid' , 'webservice', '', $exceptionparam);
+                }
+                require_capability('moodle/course:managegroups', $context);
+
+                $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
+                self::log_for_artena('create_group',"GROUP:\n".print_r($existing_group,1));
+
+                if (false === $existing_group) {    // create
+                    $new_group = array();
+                    $new_group['courseid'] = $existing_course->id;
+                    $new_group['name'] = $group['groupidnumber'];
+                    $new_group['description'] = $group['groupdescription'];
+                    $new_group['descriptionformat'] = FORMAT_HTML;
+                    $new_group['id'] = groups_create_group((object)$new_group, false);
+                    self::log_for_artena('create_group',print_r($new_group,1));
+                    $resultgroups[] = array('id' => $new_group['id'], 'name' => $new_group['name'], 'coursename' => $group['fullname'], 'action'=> 'insert');
+
+                } else {    // update
+                    self::log_for_artena('create_group','UPDATE');
+                    $existing_group->description = $group['groupdescription'];
+                    self::log_for_artena('create_group',print_r($existing_group,1));
+                    $existing_group->descriptionformat = FORMAT_HTML;
+                    groups_update_group((object)$existing_group, false);
+
+                    $resultgroups[] = array('id' => $existing_group->id, 'name' => $group['groupidnumber'], 'coursename' => $group['fullname'], 'action'=> 'update');
+                }
+
+                $transaction->allow_commit();
+
+            } catch (invalid_parameter_exception $e) {
+                self::log_for_artena('create_group', 'invalid parameter EXCEPTION! ' . $e->getMessage());
+                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'coursename' => $group['fullname'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-            require_capability('moodle/course:managegroups', $context);
-
-            $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
-self::log_for_artena('create_group',"GROUP:\n".print_r($existing_group,1));
-
-            if (false === $existing_group) {    // create
-                $new_group = array();
-                $new_group['courseid'] = $existing_course->id;
-                $new_group['name'] = $group['groupidnumber'];
-                $new_group['description'] = $group['groupdescription'];
-                $new_group['descriptionformat'] = FORMAT_HTML;
-                $new_group['id'] = groups_create_group((object)$new_group, false);
-self::log_for_artena('create_group',print_r($new_group,1));
-                $resultgroups[] = array('id' => $new_group['id'], 'name' => $new_group['name'], 'action'=> 'insert');
-
-            } else {    // update
-self::log_for_artena('create_group','UPDATE');
-                $existing_group->description = $group['groupdescription'];
-self::log_for_artena('create_group',print_r($existing_group,1));
-                $existing_group->descriptionformat = FORMAT_HTML;
-                groups_update_group((object)$existing_group, false);
-
-                $resultgroups[] = array('id' => $existing_group->id, 'name' => $group['groupidnumber'], 'action'=> 'update');
+            catch (moodle_exception $e) {
+                self::log_for_artena('create_group', 'moodle EXCEPTION! ' . $e->getMessage());
+                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'coursename' => $group['fullname'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('create_group', 'EXCEPTION! ' . $e->getMessage());
             }
         }
 
-        $transaction->allow_commit();
-
-self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));
+        self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));
         return $resultgroups;
     }
 
@@ -630,9 +689,11 @@ self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'id'        => new external_value(PARAM_INT, 'group id'),
-                    'name'      => new external_value(PARAM_TEXT, 'name'),
-                    'action'    => new external_value(PARAM_TEXT, 'action performed (insert,update,skip)'),
+                    'id' => new external_value(PARAM_INT, 'group id'),
+                    'name' => new external_value(PARAM_TEXT, 'group name'),
+                    'coursename' => new external_value(PARAM_TEXT, 'course fullname'),
+                    'action' => new external_value(PARAM_TEXT, 'action performed (insert,update,skip,error)'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -676,8 +737,8 @@ self::log_for_artena('create_group',"END\n".print_r($resultgroups,1));
         global $CFG, $DB;
         require_once($CFG->dirroot . "/group/lib.php");
 
-self::log_for_artena('remove_group','BEGIN',1);
-self::log_for_artena('remove_group',print_r($groups,1));
+        self::log_for_artena('remove_group','BEGIN',1);
+        self::log_for_artena('remove_group',print_r($groups,1));
 
         $resultgroups = array();
         $params = self::validate_parameters(self::remove_group_parameters(),array('groups' => $groups));
@@ -685,50 +746,68 @@ self::log_for_artena('remove_group',print_r($groups,1));
         $transaction = $DB->start_delegated_transaction();
 
         foreach ($params['groups'] as $group) {
-
-            // Check if the expected associated course exists
-            if ($course['link_courses']) {
-                $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
-            } else {
-                $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
-            }
-
-            if (false === $existing_course) {
-                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action' => 'skip');
-                continue;
-            }
-
-            if (trim($group['groupidnumber']) == '') {
-                throw new invalid_parameter_exception('Invalid group name');
-            }
-
-            // now security checks
-            $context = context_course::instance($existing_course->id, IGNORE_MISSING);
             try {
-                self::validate_context($context);
-            } catch (Exception $e) {
-                $exceptionparam = new stdClass();
-                $exceptionparam->message = $e->getMessage();
-                $exceptionparam->courseid = $existing_course->courseid;
-                throw new moodle_exception('errorcoursecontextnotvalid' , 'webservice', '', $exceptionparam);
+
+                $transaction = $DB->start_delegated_transaction();
+                self::log_for_artena('create_group',print_r($group,1));
+
+                // Check if the expected associated course exists
+                if ($course['link_courses']) {
+                    $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
+                } else {
+                    $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
+                }
+
+                if (false === $existing_course) {
+                    $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action' => 'skip');
+                    continue;
+                }
+
+                if (trim($group['groupidnumber']) == '') {
+                    throw new Exception('Invalid group name');
+                }
+
+                // now security checks
+                $context = context_course::instance($existing_course->id, IGNORE_MISSING);
+                try {
+                    self::validate_context($context);
+                } catch (Exception $e) {
+                    $exceptionparam = new stdClass();
+                    $exceptionparam->message = $e->getMessage();
+                    $exceptionparam->courseid = $existing_course->courseid;
+                    throw new moodle_exception('errorcoursecontextnotvalid' , 'webservice', '', $exceptionparam);
+                }
+                require_capability('moodle/course:managegroups', $context);
+
+                $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
+                self::log_for_artena('remove_group',"GROUP:\n".print_r($existing_group,1));
+
+                if (false === $existing_group) {
+                    $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action' => 'skip');
+                    continue;
+                }
+                groups_delete_group($existing_group->id);
+
+                $resultgroups[] = array('id' => $existing_group->id, 'name' => $group['groupidnumber'], 'action'=> 'delete');
+
+                $transaction->allow_commit();
+
+            } catch (invalid_parameter_exception $e) {
+                self::log_for_artena('remove_group', 'invalid parameter EXCEPTION! ' . $e->getMessage());
+                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-            require_capability('moodle/course:managegroups', $context);
-
-            $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
-self::log_for_artena('remove_group',"GROUP:\n".print_r($existing_group,1));
-
-            if (false === $existing_group) {
-                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action' => 'skip');
-                continue;
+            catch (moodle_exception $e) {
+                self::log_for_artena('remove_group', 'moodle EXCEPTION! ' . $e->getMessage());
+                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action'=> 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-            groups_delete_group($existing_group->id);
-
-            $resultgroups[] = array('idnumber' => $group['groupidnumber'], 'action'=> 'delete');
+            catch (Exception $e) {
+                self::log_for_artena('remove_group', 'EXCEPTION! ' . $e->getMessage());
+            }
         }
 
-        $transaction->allow_commit();
-
-self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
+        self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
         return $resultgroups;
     }
 
@@ -741,8 +820,10 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'idnumber'  => new external_value(PARAM_RAW, 'id number'),
-                    'result'    => new external_value(PARAM_RAW, 'result value'),
+                    'id' => new external_value(PARAM_INT, 'group id'),
+                    'name' => new external_value(PARAM_TEXT, 'name'),
+                    'action' => new external_value(PARAM_TEXT, 'action performed (delete,skip,error)'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -841,12 +922,12 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
 
                 // Make sure auth is valid
                 if (empty($availableauths[$user['auth']])) {
-                    throw new invalid_parameter_exception('Invalid authentication type: '.$user['auth']);
+                    throw new Exception('Invalid authentication type: '.$user['auth']);
                 }
 
                 // Make sure lang is valid
                 if (empty($availablelangs[$user['lang']])) {
-                    throw new invalid_parameter_exception('Invalid language code: '.$user['lang']);
+                    throw new Exception('Invalid language code: '.$user['lang']);
                 }
 
                 // Make sure lang is valid
@@ -854,14 +935,14 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
                                                                                          // so no default value.
                                                                                          // We need to test if the client sent it
                                                                                          // => !empty($user['theme'])
-                    throw new invalid_parameter_exception('Invalid theme: '.$user['theme']);
+                    throw new Exception('Invalid theme: '.$user['theme']);
                 }
 
                 // make sure there is no data loss during truncation
                 $truncated = truncate_userinfo($user);
                 foreach ($truncated as $key=>$value) {
                         if ($truncated[$key] !== $user[$key]) {
-                            throw new invalid_parameter_exception('Property: '.$key.' is too long: '.$user[$key]);
+                            throw new Exception('Property: '.$key.' is too long: '.$user[$key]);
                         }
                 }
 
@@ -921,17 +1002,22 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
                     $existing_user->email = $user['email'];
                     $DB->update_record('user', $existing_user);
                     */
-                    $userids[] = array('id' => $existing_user->id, 'username' => $existing_user->id, 'action'=>'edit');
+                    $userids[] = array('id' => $existing_user->id, 'username' => $existing_user->id, 'action'=>'update');
                 }
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('create_user', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                $userids[] = array('id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('create_user', 'moodle EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                $userids[] = array('id'=>$user['id'], 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('create_user', 'EXCEPTION! ' . $e->getMessage());
             }
         }
 
@@ -989,9 +1075,10 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'id'       => new external_value(PARAM_INT, 'user id'),
+                    'id' => new external_value(PARAM_INT, 'user id'),
                     'username' => new external_value(PARAM_RAW, 'user name'),
-                    'action'   => new external_value(PARAM_RAW, 'action performed (add or edit)'),
+                    'action' => new external_value(PARAM_RAW, 'action performed (add, edit, error)'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -1053,27 +1140,32 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
                 $truncated = truncate_userinfo($user);
                 foreach ($truncated as $key=>$value) {
                     if ($truncated[$key] !== $user[$key]) {
-                        throw new invalid_parameter_exception('Property: '.$key.' is too long: '.$user[$key]);
+                        throw new Exception('Property: '.$key.' is too long: '.$user[$key]);
                     }
                 }
 
                 // check for user's existence
                 $existing_user = $DB->get_record('user', array('username' => $user['username']));
                 if (false === $existing_user) {   // unknown user
-                    throw new invalid_parameter_exception('Unknown user: '.$user['username']);
+                    throw new Exception('Unknown user: '.$user['username']);
                 } else {    // existing user, delete
                     user_delete_user($existing_user);
-                    $userids[] = array('id' => $existing_user->id, 'username' => $existing_user->username);
+                    $userids[] = array('id' => $existing_user->id, 'username' => $existing_user->username, 'action' => 'delete');
                 }
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('remove_user', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                $userids[] = array('id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('remove_user', 'moodle EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                $userids[] = array('id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('remove_user', 'EXCEPTION! ' . $e->getMessage());
             }
         }
 
@@ -1090,6 +1182,8 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
                 array(
                     'id'       => new external_value(PARAM_INT, 'user id'),
                     'username' => new external_value(PARAM_RAW, 'user name'),
+                    'action' => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -1145,37 +1239,38 @@ self::log_for_artena('remove_group',"END\n".print_r($resultgroups,1));
         // If any problems are found then exceptions are thrown with helpful error messages
         $params = self::validate_parameters(self::create_enrol_parameters(), array('assignments'=>$assignments));
 
-self::log_for_artena('create_enrol','BEGIN',1);
+        self::log_for_artena('create_enrol','BEGIN',1);
         $enrolments = array();
         foreach ($params['assignments'] as $assignment) {
             try {
                 self::log_for_artena('create_enrol',print_r($assignment,1));
                 $transaction = $DB->start_delegated_transaction();
-//self::log_for_artena('create_enrol','get user');
+
+                //self::log_for_artena('create_enrol','get user');
                 $existing_user = $DB->get_record('user', array('username' => $assignment['username']));
                 if (false === $existing_user) {   // unknown user
-                    throw new invalid_parameter_exception('Unknown user: '.$assignment['username']);
+                    throw new Exception('Unknown user: '.$assignment['username']);
                 }
 
                 $link_retrieve = false;
-//self::log_for_artena('create_enrol','get course');
+                //self::log_for_artena('create_enrol','get course');
                 if ($course['link_courses']) {
                     $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
                     if (false === $existing_course) {   // unknown course
-                        throw new invalid_parameter_exception('Unknown course: '.$assignment['idnumber']);
+                        throw new Exception('Unknown course: '.$assignment['idnumber']);
                     } else {
                       $link_retrieve = true;
                     }
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $assignment['idnumber']));
                     if (false === $existing_course) {   // unknown course
-                        throw new invalid_parameter_exception('Unknown course: '.$assignment['idnumber']);
+                        throw new Exception('Unknown course: '.$assignment['idnumber']);
                     }
                 }
-//self::log_for_artena('create_enrol','get context');
+                //self::log_for_artena('create_enrol','get context');
                 $context = context_course::instance($existing_course->id);
                 if (false === $context) {   // unknown context
-                    throw new invalid_parameter_exception('Context does not exist for course: '.$existing_course->id);
+                    throw new Exception('Context does not exist for course: '.$existing_course->id);
                 }
 
                 $new_enrolment = false;
@@ -1184,11 +1279,11 @@ self::log_for_artena('create_enrol','BEGIN',1);
                 // 1) user has an enrolment in the specified course
                 // 2) the end date for that enrolment is after the start date for the input enrolment
                 //
-//self::log_for_artena('create_enrol','get enrol');
+                self::log_for_artena('create_enrol','get enrol');
                 if (false === ($enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $assignment['roleid'], 'courseid' => $existing_course->id)))) {
                     $new_enrolment = true;
                 } else {
-//self::log_for_artena('create_enrol','get user_enrolments');
+                    //self::log_for_artena('create_enrol','get user_enrolments');
                     if (false === ($user_enrolment = $DB->get_record('user_enrolments', array('userid' => $existing_user->id, 'enrolid' => $enrolment_configuration->id)))) {
                         $new_enrolment = true;
                     } else {
@@ -1222,7 +1317,7 @@ self::log_for_artena('create_enrol','BEGIN',1);
                     // create the user_enrolments record (lib/enrollib.php)
                     $plugin = enrol_get_plugin('manual');
                     $plugin->enrol_user($enrolment_configuration, $existing_user->id, $assignment['roleid'], $assignment['timestart'], $assignment['timeend']);
-                    $enrolments[] = array('userid' => $existing_user->id, 'courseid' => $existing_course->id, 'action' => 'add');
+                    $enrolments[] = array('username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'add');
 
                 } else {    // update
 
@@ -1231,20 +1326,19 @@ self::log_for_artena('create_enrol','BEGIN',1);
                     $user_enrolment->timestart = $assignment['timestart'];
                     $user_enrolment->timeend = $assignment['timeend'];
                     $user_enrolment->status = ENROL_USER_ACTIVE;
-//self::log_for_artena('create_enrol','update user_enrolments');
+                    //self::log_for_artena('create_enrol','update user_enrolments');
                     $DB->update_record('user_enrolments', $user_enrolment);
-                    $enrolments[] = array('userid' => $existing_user->id, 'courseid' => $existing_course->id, 'action' => 'update');
+                    $enrolments[] = array('username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'update');
                 }
 
                 // assign group, if required
-//self::log_for_artena('create_enrol','get group');
+                //self::log_for_artena('create_enrol','get group');
                 if (!empty($assignment['groupidnumber'])) {
-                    //$existing_group = groups_get_group_by_name($existing_course->id, $assignment['groupidnumber']);
                     $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $assignment['groupidnumber']));
 
                     self::log_for_artena('create_enrol',print_r($existing_group,1));
                     if (false === $existing_group) {
-                        throw new invalid_parameter_exception('Unknown group: '.$assignment['groupidnumber']);
+                        throw new Exception('Unknown group: '.$assignment['groupidnumber']);
                     }
                     $existing_memberships = groups_get_user_groups($existing_course->id, $existing_user->id);
                     foreach ($existing_memberships as $membership) {
@@ -1257,30 +1351,34 @@ self::log_for_artena('create_enrol','BEGIN',1);
                 // reset accessibility/visibility
                 if (true == $flip_visible) {
                   if (!$link_retrieve) {
-//self::log_for_artena('create_enrol','get flip_visible course');
+                    //self::log_for_artena('create_enrol','get flip_visible course');
                     $existing_course = $DB->get_record('course', array('idnumber' => $assignment['idnumber']));
                   } else {
-//self::log_for_artena('create_enrol','get flip_visible linked course');
+                    //self::log_for_artena('create_enrol','get flip_visible linked course');
                     $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
                   }
                   $existing_course->visible = 0;
-//self::log_for_artena('create_enrol','update course');
+                  //self::log_for_artena('create_enrol','update course');
                   $DB->update_record('course', $existing_course);
                 }
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
-                self::log_for_artena('create_enrol','EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                self::log_for_artena('create_enrol','parameter EXCEPTION! ' . $e->getMessage());
+                $enrolments[] = array('userid'=>-1, 'courseid'=>-1, 'action'=>'error', 'message'=>$e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('create_enrol', 'moodle EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                $enrolments[] = array('userid'=>-1, 'courseid'=>-1, 'action'=>'error', 'message'=>$e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-//self::log_for_artena('create_enrol','loop complete');
+            catch (Exception $e) {
+                self::log_for_artena('create_enrol', 'EXCEPTION! ' . $e->getMessage());
+            }
         }
 
-//self::log_for_artena('create_enrol','END');
+        //self::log_for_artena('create_enrol','END');
         return $enrolments;
     }
 
@@ -1292,9 +1390,10 @@ self::log_for_artena('create_enrol','BEGIN',1);
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'userid'   => new external_value(PARAM_INT, 'user id'),
-                    'courseid' => new external_value(PARAM_RAW, 'course id'),
+                    'username'   => new external_value(PARAM_INT, 'user name'),
+                    'coursename' => new external_value(PARAM_RAW, 'course fullname'),
                     'action'   => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
                 )
             )
         );
@@ -1346,68 +1445,88 @@ self::log_for_artena('create_enrol','BEGIN',1);
         // If any problems are found then exceptions are thrown with helpful error messages
         $params = self::validate_parameters(self::remove_enrol_parameters(), array('assignments'=>$assignments));
 
-        $transaction = $DB->start_delegated_transaction();
-
+        self::log_for_artena('remove_enrol', 'BEGIN', 1);
         foreach ($params['assignments'] as $assignment) {
+            try {
 
-            $existing_user = $DB->get_record('user', array('username' => $assignment['username']));
-            if (false === $existing_user) {   // unknown user
-                throw new invalid_parameter_exception('Unknown user: '.$assignment['username']);
+                $transaction = $DB->start_delegated_transaction();
+
+                $existing_user = $DB->get_record('user', array('username' => $assignment['username']));
+                if (false === $existing_user) {   // unknown user
+                    throw new Exception('Unknown user: '.$assignment['username']);
+                }
+
+                if ($course['link_courses']) {
+                    $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
+                } else {
+                    $existing_course = $DB->get_record('course', array('idnumber' => $assignment['idnumber']));
+                }
+
+                if (false === $existing_course) {   // unknown course
+                    throw new Exception('Unknown course: '.$assignment['idnumber']);
+                }
+
+                $context = context_course::instance($existing_course->id);
+                if (false === $context) {   // unknown context
+                    throw new Exception('Context does not exist for course: '.$existing_course->id);
+                }
+
+                if (false === ($enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $assignment['roleid'], 'courseid' => $existing_course->id)))) {
+                    throw new Exception('Unknown enrolment');
+                }
+                if (false === ($user_enrolment = $DB->get_record('user_enrolments', array('userid' => $existing_user->id, 'enrolid' => $enrolment_configuration->id)))) {
+                    throw new Exception('Unknown enrolment');
+                }
+
+                switch ($assignment['action']) {
+
+                    case 'delete':
+                        // Ensure the current user is allowed to run this function in the enrolment context
+                        self::validate_context($context);
+                        require_capability('enrol/manual:unenrol', $context);
+
+                        // retrieve new user_enrolments record to update with start/finish dates
+                        $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $assignment['roleid'], 'courseid' => $existing_course->id));
+
+                        // remove the user_enrolments record (lib/enrollib.php)
+                        $plugin = enrol_get_plugin('manual');
+                        $plugin->unenrol_user($enrolment_configuration, $existing_user->id);
+                        break;
+
+                    case 'suspend':
+                        // Ensure the current user is allowed to run this function in the enrolment context
+                        //self::validate_context($context);
+                        //require_capability('enrol/manual:manage', $context);
+
+                        $DB->set_field('user_enrolments', 'status', ENROL_USER_SUSPENDED, array('enrolid'=>$enrolment_configuration->id, 'userid'=>$existing_user->id));
+                        break;
+
+                    default:
+                        throw new Exception('Unknown action');
+                        break;
+                }
+
+                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'delete');
+
+                $transaction->allow_commit();
+
+            } catch (invalid_parameter_exception $e) {
+                self::log_for_artena('remove_enrol','parameter EXCEPTION! ' . $e->getMessage());
+                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-
-            if ($course['link_courses']) {
-                $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
-            } else {
-                $existing_course = $DB->get_record('course', array('idnumber' => $assignment['idnumber']));
+            catch (moodle_exception $e) {
+                self::log_for_artena('remove_enrol', 'moodle EXCEPTION! ' . $e->getMessage());
+                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
-
-            if (false === $existing_course) {   // unknown course
-                throw new invalid_parameter_exception('Unknown course: '.$assignment['idnumber']);
+            catch (Exception $e) {
+                self::log_for_artena('remove_enrol', 'EXCEPTION! ' . $e->getMessage());
+                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
             }
-
-            $context = context_course::instance($existing_course->id);
-            if (false === $context) {   // unknown context
-                throw new invalid_parameter_exception('Context does not exist for course: '.$existing_course->id);
-            }
-
-            if (false === ($enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $assignment['roleid'], 'courseid' => $existing_course->id)))) {
-                throw new invalid_parameter_exception('Unknown enrolment');
-            }
-            if (false === ($user_enrolment = $DB->get_record('user_enrolments', array('userid' => $existing_user->id, 'enrolid' => $enrolment_configuration->id)))) {
-                throw new invalid_parameter_exception('Unknown enrolment');
-            }
-
-            switch ($assignment['action']) {
-
-                case 'delete':
-                    // Ensure the current user is allowed to run this function in the enrolment context
-                    self::validate_context($context);
-                    require_capability('enrol/manual:unenrol', $context);
-
-                    // retrieve new user_enrolments record to update with start/finish dates
-                    $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $assignment['roleid'], 'courseid' => $existing_course->id));
-
-                    // remove the user_enrolments record (lib/enrollib.php)
-                    $plugin = enrol_get_plugin('manual');
-                    $plugin->unenrol_user($enrolment_configuration, $existing_user->id);
-                    break;
-
-                case 'suspend':
-                    // Ensure the current user is allowed to run this function in the enrolment context
-                    //self::validate_context($context);
-                    //require_capability('enrol/manual:manage', $context);
-
-                    $DB->set_field('user_enrolments', 'status', ENROL_USER_SUSPENDED, array('enrolid'=>$enrolment_configuration->id, 'userid'=>$existing_user->id));
-                    break;
-
-                default:
-                    throw new invalid_parameter_exception('Unknown action');
-                    break;
-            }
-
         }
 
-        $transaction->allow_commit();
+        return $enrolments;
     }
 
     /**
@@ -1415,7 +1534,16 @@ self::log_for_artena('create_enrol','BEGIN',1);
      * @return external_description
      */
     public static function remove_enrol_returns() {
-        return null;
+        return new external_multiple_structure(
+            new external_single_structure(
+                array(
+                    'username'   => new external_value(PARAM_TEXT, 'user name'),
+                    'coursename'   => new external_value(PARAM_RAW, 'course fullname'),
+                    'action'   => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
+                )
+            )
+        );
     }
 
 
@@ -1532,6 +1660,7 @@ self::log_for_artena('create_enrol','BEGIN',1);
                     new external_single_structure(
                         array(
                             // artena supplies
+                            'retrievedate' => new external_value(PARAM_INT, 'timestamp after which to retrieve record inserts/updates'),
                             'username' => new external_value(PARAM_RAW, 'The user whose grade will be retrieved'),
                             'fullname' => new external_value(PARAM_TEXT, 'full name'),
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
@@ -1607,7 +1736,9 @@ self::log_for_artena('create_enrol','BEGIN',1);
                             'courseid' => $enr['idnumber'],
                             'groupid' => $enr['groupidnumber'],
                             'studentid' => $student->idnumber,
+                            'attendancename' => $attendance_item->name,
                             'attendancedate' => $atti->timetaken,
+                            'attendancenote' => $attendance_item->remarks,
                             'attendance' => $statuses_hash[$atti->statusid],
                             );
                     }
@@ -1617,11 +1748,14 @@ self::log_for_artena('create_enrol','BEGIN',1);
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('get_attendance', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('get_attendance', 'moodle EXCEPTION! ' . $e->getMessage());
-                $DB->rollback_delegated_transaction($transaction/*, $e*/);
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('get_attendance', 'EXCEPTION! ' . $e->getMessage());
             }
         }
 
@@ -1641,11 +1775,23 @@ self::log_for_artena('create_enrol','BEGIN',1);
                     'courseid' => new external_value(PARAM_RAW, 'course id'),
                     'groupid' => new external_value(PARAM_RAW, 'group id'),
                     'studentid'  => new external_value(PARAM_RAW, 'student id number'),
+                    'attendancename' => new external_value(PARAM_TEXT, 'attendance name'),
                     'attendancedate' => new external_value(PARAM_INT, 'timestamp when the attendance was entered', VALUE_OPTIONAL),
+                    'attendancenote' => new external_value(PARAM_TEXT, 'attendance note', VALUE_OPTIONAL),
                     'attendance'  => new external_value(PARAM_FLOAT, 'attendance status'),
                 )
             )
         );
+    }
+
+    public static function rollback_suppress_exception(moodle_transaction $transaction)
+    {
+        global $DB;
+        $e = new Exception();
+        try {
+            $DB->rollback_delegated_transaction($transaction, $e);
+        }
+        catch (Exception $e) {}
     }
 
     public static function log_for_artena($method,$data,$new=0) {
