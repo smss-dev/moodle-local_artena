@@ -31,7 +31,8 @@ $functions = array(
         'methodname'  => 'ping',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Verify connection.',
-        'type' => 'read',
+        'type'        => 'read',
+        //'capabilities'=> 'moodle/user:create',
     ),
 
     'artena_get_categories' => array(
@@ -39,7 +40,7 @@ $functions = array(
         'methodname'  => 'get_categories',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Retrieve course categories.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/course:visibility',
     ),
 
@@ -48,7 +49,7 @@ $functions = array(
         'methodname'  => 'create_course',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Create courses.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/course:create,moodle/course:update',
     ),
 
@@ -57,7 +58,7 @@ $functions = array(
         'methodname'  => 'change_course_id',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Change course ID Number.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/course:update',
     ),
 
@@ -66,7 +67,7 @@ $functions = array(
         'methodname'  => 'remove_course',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Remove course.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/course:delete',
     ),
 
@@ -75,7 +76,7 @@ $functions = array(
         'methodname'  => 'create_group',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Create groups.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/course:managegroups',
     ),
 
@@ -84,7 +85,7 @@ $functions = array(
         'methodname'  => 'remove_group',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Remove groups.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/course:managegroups',
     ),
 
@@ -93,7 +94,7 @@ $functions = array(
         'methodname'  => 'create_user',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Create users.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/user:create',
     ),
 
@@ -102,7 +103,7 @@ $functions = array(
         'methodname'  => 'remove_user',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Remove users.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/user:delete',
     ),
 
@@ -111,7 +112,7 @@ $functions = array(
         'methodname'  => 'create_enrol',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Enrol users in courses.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/role:assign',
     ),
 
@@ -120,7 +121,7 @@ $functions = array(
         'methodname'  => 'remove_enrol',
         'classpath'   => 'local/artena/externallib.php',
         'description' => 'Unenrol users from courses.',
-        'type' => 'write',
+        'type'        => 'write',
         'capabilities'=> 'moodle/role:assign',
     ),
 
@@ -128,10 +129,19 @@ $functions = array(
         'classname'   => 'local_artena_external',
         'methodname'  => 'get_grades',
         'classpath'   => 'local/artena/externallib.php',
-        'description' => 'Retrieve student grades.',
-        'type' => 'read',
-        'capabilities'=> 'moodle/course:visibility',
-    ),    
+        'description' => 'Get course results.',
+        'type'        => 'write',
+        'capabilities'=> 'enrol/manual:manage',
+    ),
+
+    'artena_get_attendance' => array(
+        'classname'   => 'local_artena_external',
+        'methodname'  => 'get_attendance',
+        'classpath'   => 'local/artena/externallib.php',
+        'description' => 'Get attendance.',
+        'type'        => 'write',
+        'capabilities'=> 'mod/attendance:view',
+    ),
 );
 
 $services = array(
@@ -148,7 +158,8 @@ $services = array(
             'artena_remove_user',
             'artena_create_enrol',
             'artena_remove_enrol',
-            'artena_get_grades'),
+            'artena_get_grades',
+            'artena_get_attendance'),
         'enabled' => 1,
         'restrictedusers' => 0,
         'shortname' => 'AWS'
