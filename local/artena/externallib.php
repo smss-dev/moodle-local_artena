@@ -274,7 +274,9 @@ class local_artena_external extends external_api {
 
                     $course['category'] = $course['categoryid'];
                     self::log_for_artena('create_course', 'new course obj=' . print_r($course,1));
-                    //Note: create_course() core function check shortname, idnumber, category
+                    if ($course['link_courses']){
+                        $course['idnumber'] = '';
+                    }
                     $course['id'] = create_course((object) $course)->id;
                     self::log_for_artena('create_course', 'new course id=' . $course['id']);
                     $resultcourses[] = array('id' => $course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'add');
@@ -388,16 +390,6 @@ class local_artena_external extends external_api {
 
                     // Ensure the current user is allowed to run this function
                     $context = context_coursecat::instance($existing_course->category);
-                    try {
-                        self::validate_context($context);
-                    } catch (Exception $e) {
-                        $exceptionparam = new stdClass();
-                        $exceptionparam->message = $e->getMessage();
-                        $exceptionparam->catid = $existing_course->category;
-                        throw new moodle_exception(
-                                get_string('errorcatcontextnotvalid', 'webservice', $exceptionparam));
-                    }
-
                     require_capability('moodle/course:update', $context);
 
                     $existing_course->idnumber = $course['idnumbernew'];
@@ -503,17 +495,8 @@ class local_artena_external extends external_api {
 
                     // Ensure the current user is allowed to run this function
                     $context = context_coursecat::instance($existing_course->category);
-                    try {
-                        self::validate_context($context);
-                    } catch (Exception $e) {
-                        $exceptionparam = new stdClass();
-                        $exceptionparam->message = $e->getMessage();
-                        $exceptionparam->catid = $existing_course->category;
-                        throw new moodle_exception(
-                                get_string('errorcatcontextnotvalid', 'webservice', $exceptionparam));
-                    }
-
                     require_capability('moodle/course:delete', $context);
+
                     if (!delete_course((object) $existing_course, false)){
                         throw new Exception('Unable to delete course: ' . $course['idnumber']);
                     } else {
@@ -608,7 +591,7 @@ class local_artena_external extends external_api {
                 self::log_for_artena('create_group',print_r($group,1));
 
                 // Check if this is a create or update request
-                if ($course['link_courses']) {
+                if ($group['link_courses']) {
                     $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
@@ -626,14 +609,6 @@ class local_artena_external extends external_api {
 
                 // now security checks
                 $context = context_course::instance($existing_course->id, IGNORE_MISSING);
-                try {
-                    self::validate_context($context);
-                } catch (Exception $e) {
-                    $exceptionparam = new stdClass();
-                    $exceptionparam->message = $e->getMessage();
-                    $exceptionparam->courseid = $existing_course->courseid;
-                    throw new moodle_exception('errorcoursecontextnotvalid' , 'webservice', '', $exceptionparam);
-                }
                 require_capability('moodle/course:managegroups', $context);
 
                 $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
@@ -752,7 +727,7 @@ class local_artena_external extends external_api {
                 self::log_for_artena('create_group',print_r($group,1));
 
                 // Check if the expected associated course exists
-                if ($course['link_courses']) {
+                if ($group['link_courses']) {
                     $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
@@ -769,14 +744,6 @@ class local_artena_external extends external_api {
 
                 // now security checks
                 $context = context_course::instance($existing_course->id, IGNORE_MISSING);
-                try {
-                    self::validate_context($context);
-                } catch (Exception $e) {
-                    $exceptionparam = new stdClass();
-                    $exceptionparam->message = $e->getMessage();
-                    $exceptionparam->courseid = $existing_course->courseid;
-                    throw new moodle_exception('errorcoursecontextnotvalid' , 'webservice', '', $exceptionparam);
-                }
                 require_capability('moodle/course:managegroups', $context);
 
                 $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
@@ -901,7 +868,6 @@ class local_artena_external extends external_api {
 
         // Ensure the current user is allowed to run this function
         $context = context_system::instance();
-        self::validate_context($context);
         require_capability('moodle/user:create', $context);
 
         // Do basic automatic PARAM checks on incoming data, using params description
@@ -1120,7 +1086,6 @@ class local_artena_external extends external_api {
 
         // Ensure the current user is allowed to run this function
         $context = context_system::instance();
-        self::validate_context($context);
         require_capability('moodle/user:delete', $context);
 
         // Do basic automatic PARAM checks on incoming data, using params description
@@ -1254,7 +1219,7 @@ class local_artena_external extends external_api {
 
                 $link_retrieve = false;
                 //self::log_for_artena('create_enrol','get course');
-                if ($course['link_courses']) {
+                if ($assignment['link_courses']) {
                     $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
                     if (false === $existing_course) {   // unknown course
                         throw new Exception('Unknown course: '.$assignment['idnumber']);
@@ -1456,7 +1421,7 @@ class local_artena_external extends external_api {
                     throw new Exception('Unknown user: '.$assignment['username']);
                 }
 
-                if ($course['link_courses']) {
+                if ($assignment['link_courses']) {
                     $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $assignment['idnumber']));
@@ -1482,7 +1447,6 @@ class local_artena_external extends external_api {
 
                     case 'delete':
                         // Ensure the current user is allowed to run this function in the enrolment context
-                        self::validate_context($context);
                         require_capability('enrol/manual:unenrol', $context);
 
                         // retrieve new user_enrolments record to update with start/finish dates
@@ -1596,7 +1560,7 @@ class local_artena_external extends external_api {
             }
 
             // get course
-            if ($course['link_courses']) {
+            if ($ar['link_courses']) {
                 $existing_course = $DB->get_record('course', array('fullname' => $ar['fullname'], 'shortname' => $ar['shortname']));
             } else {
                 $existing_course = $DB->get_record('course', array('idnumber' => $ar['idnumber']));
@@ -1649,143 +1613,7 @@ class local_artena_external extends external_api {
         );
     }
 
-    /**
-     * Returns description of method parameters
-     * @return external_function_parameters
-     */
-    public static function get_attendance_parameters() {
-        return new external_function_parameters(
-            array(
-                'enrolments' => new external_multiple_structure(
-                    new external_single_structure(
-                        array(
-                            // artena supplies
-                            'retrievedate' => new external_value(PARAM_INT, 'timestamp after which to retrieve record inserts/updates'),
-                            'username' => new external_value(PARAM_RAW, 'The user whose grade will be retrieved'),
-                            'fullname' => new external_value(PARAM_TEXT, 'full name'),
-                            'shortname' => new external_value(PARAM_TEXT, 'course short name'),
-                            'courseidnumber' => new external_value(PARAM_RAW, 'course id number', VALUE_OPTIONAL),
-                            'groupidnumber' => new external_value(PARAM_RAW, 'group id number', VALUE_OPTIONAL),
-                            'idnumber' => new external_value(PARAM_RAW, 'id number', VALUE_OPTIONAL),
-                            'link_courses' => new external_value(PARAM_INT, 'ARTENA FIELD (1: link courses of same name, 0: treat all as distinct)', VALUE_OPTIONAL),
-                        )
-                    ), 'courses for which to retrieve grades'
-                )
-            )
-        );
-    }
-
-    /**
-     * Get attendance
-     * @param $enrolments
-     * @return array attendance (course, student, date, attendance status)
-     * @throws dml_transaction_exception
-     * @throws invalid_parameter_exception
-     * @internal param array $attendance
-     */
-    public static function get_attendance($enrolments) {
-        global $CFG, $DB;
-        self::log_for_artena('get_attendance','BEGIN ' . print_r($enrolments,1),1);
-
-        $params = self::validate_parameters(self::get_grades_parameters(), array('enrolments'=>$enrolments));
-
-        foreach ($params['enrolments'] as $enr) {
-            try {
-                $transaction = $DB->start_delegated_transaction();
-
-                // get student
-                $student = $DB->get_record('user', array('username' => $enr['username']));
-                if (false === $student) {
-                    continue;
-                }
-
-                // get course
-                if ($course['link_courses']) {
-                    $existing_course = $DB->get_record('course', array('fullname' => $enr['fullname'], 'shortname' => $enr['shortname']));
-                } else {
-                    $existing_course = $DB->get_record('course', array('idnumber' => $enr['idnumber']));
-                }
-
-                if (false === $existing_course) {
-                    continue;
-                }
-
-                $groupid = 0;
-                if  ($enr['groupidnumber'] != '') {
-                    $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $enr['groupidnumber']));
-                    $groupid = $existing_group->id;
-                }
-
-                // get attendance
-                $attendance_item = $DB->get_record('attendance', array('course' => $existing_course->id));
-
-                $statuses_hash = array();
-                $attendance_statuses = $DB->get_records('attendance_statuses', array('attendanceid' => $attendance_item->id));
-                foreach ($attendance_statuses as $ats) {
-                    $statuses_hash[$ats->id] = $ats->acronym;
-                }
-
-                $attendance_sessions = $DB->get_records('attendance_sessions', array('attendanceid' => $attendance_item->id, 'groupid' => $groupid));
-                foreach ($attendance_sessions as $session) {
-                    $attendance_items = $DB->get_records('attendance_log', array('sessionid' => $session->id, 'studentid' => $student->id));
-
-                    foreach ($attendance_items as $atti) {
-                        // populate return structure
-                        //
-                        $resultattendance[] = array(
-                            'courseid' => $enr['idnumber'],
-                            'groupid' => $enr['groupidnumber'],
-                            'studentid' => $student->idnumber,
-                            'attendancename' => $attendance_item->name,
-                            'attendancedate' => $atti->timetaken,
-                            'attendancenote' => $attendance_item->remarks,
-                            'attendance' => $statuses_hash[$atti->statusid],
-                            );
-                    }
-                }
-
-                $transaction->allow_commit();
-
-            } catch (invalid_parameter_exception $e) {
-                self::log_for_artena('get_attendance', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);
-            }
-            catch (moodle_exception $e) {
-                self::log_for_artena('get_attendance', 'moodle EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);
-            }
-            catch (Exception $e) {
-                self::log_for_artena('get_attendance', 'EXCEPTION! ' . $e->getMessage());
-            }
-        }
-
-        self::log_for_artena('get_attendance','END ' . print_r($resultattendance,1));
-
-        return $resultattendance;
-    }
-
-    /**
-     * Returns description of method result value
-     * @return external_description
-     */
-    public static function get_attendance_returns() {
-        return new external_multiple_structure(
-            new external_single_structure(
-                array(
-                    'courseid' => new external_value(PARAM_RAW, 'course id'),
-                    'groupid' => new external_value(PARAM_RAW, 'group id'),
-                    'studentid'  => new external_value(PARAM_RAW, 'student id number'),
-                    'attendancename' => new external_value(PARAM_TEXT, 'attendance name'),
-                    'attendancedate' => new external_value(PARAM_INT, 'timestamp when the attendance was entered', VALUE_OPTIONAL),
-                    'attendancenote' => new external_value(PARAM_TEXT, 'attendance note', VALUE_OPTIONAL),
-                    'attendance'  => new external_value(PARAM_FLOAT, 'attendance status'),
-                )
-            )
-        );
-    }
-
-    public static function rollback_suppress_exception(moodle_transaction $transaction)
-    {
+    public static function rollback_suppress_exception(moodle_transaction $transaction) {
         global $DB;
         $e = new Exception();
         try {
@@ -1795,12 +1623,13 @@ class local_artena_external extends external_api {
     }
 
     public static function log_for_artena($method,$data,$new=0) {
-	// comment this out to enable logging
+        global $CFG;
 
+        $fn = $CFG->dataroot . '\\' . $method . '.log';
         if (1 == $new) {
-            $fp = @fopen($method.'.log','w+');
+            $fp = @fopen($fn,'w+');
         } else {
-            $fp = @fopen($method.'.log','a+');
+            $fp = @fopen($fn,'a+');
         }
 
         if ($fp) {

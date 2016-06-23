@@ -133,7 +133,7 @@ $functions = array(
         'type'        => 'write',
         'capabilities'=> 'enrol/manual:manage',
     ),
-
+/*
     'artena_get_attendance' => array(
         'classname'   => 'local_artena_external',
         'methodname'  => 'get_attendance',
@@ -142,6 +142,7 @@ $functions = array(
         'type'        => 'write',
         'capabilities'=> 'mod/attendance:view',
     ),
+*/    
 );
 
 $services = array(
@@ -159,7 +160,8 @@ $services = array(
             'artena_create_enrol',
             'artena_remove_enrol',
             'artena_get_grades',
-            'artena_get_attendance'),
+            //'artena_get_attendance',
+            ),
         'enabled' => 1,
         'restrictedusers' => 0,
         'shortname' => 'AWS'
