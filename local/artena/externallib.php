@@ -115,6 +115,7 @@ class local_artena_external extends external_api {
         }
         catch (Exception $e) {
             self::log_for_artena('get_categories', 'EXCEPTION! ' . $e->getMessage());
+            self::rollback_suppress_exception($transaction);
         }
 
         return $result;
@@ -226,7 +227,8 @@ class local_artena_external extends external_api {
 
                 // Check if this is a create or update request
                 if ($course['link_courses']) {
-                    $existing_course = $DB->get_record('course', array('fullname' => $course['fullname'], 'shortname' => $course['shortname']));
+                    //$existing_course = $DB->get_record('course', array('fullname' => $course['fullname'], 'shortname' => $course['shortname']));
+                    $existing_course = $DB->get_record('course', array('shortname' => $course['shortname']));                    
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $course['idnumber']));
                 }
@@ -295,7 +297,7 @@ class local_artena_external extends external_api {
                     }
 
                     update_course((object) $updated_course);
-                    $resultcourses[] = array('id' => $course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'update');
+                    $resultcourses[] = array('id' => $updated_course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'update');
                 }
 
                 $transaction->allow_commit();
@@ -312,6 +314,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_course', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);                
             }
         }
         self::log_for_artena('create_course', 'END');
@@ -413,6 +416,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('change_course_id', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -484,7 +488,8 @@ class local_artena_external extends external_api {
 
                 // Check if this is a create or update request
                 if ($course['link_courses']) {
-                    $existing_course = $DB->get_record('course', array('fullname' => $course['fullname'], 'shortname' => $course['shortname']));
+                    //$existing_course = $DB->get_record('course', array('fullname' => $course['fullname'], 'shortname' => $course['shortname']));
+                    $existing_course = $DB->get_record('course', array('shortname' => $course['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $course['idnumber']));
                 }
@@ -518,6 +523,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_course', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -592,7 +598,8 @@ class local_artena_external extends external_api {
 
                 // Check if this is a create or update request
                 if ($group['link_courses']) {
-                    $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
+                    //$existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
+                    $existing_course = $DB->get_record('course', array('shortname' => $group['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
                 }
@@ -648,6 +655,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_group', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);                
             }
         }
 
@@ -728,7 +736,8 @@ class local_artena_external extends external_api {
 
                 // Check if the expected associated course exists
                 if ($group['link_courses']) {
-                    $existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
+                    //$existing_course = $DB->get_record('course', array('fullname' => $group['fullname'], 'shortname' => $group['shortname']));
+                    $existing_course = $DB->get_record('course', array('shortname' => $group['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $group['courseidnumber']));
                 }
@@ -771,6 +780,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_group', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);                
             }
         }
 
@@ -984,6 +994,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_user', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);                
             }
         }
 
@@ -1131,6 +1142,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_user', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);                
             }
         }
 
@@ -1220,7 +1232,8 @@ class local_artena_external extends external_api {
                 $link_retrieve = false;
                 //self::log_for_artena('create_enrol','get course');
                 if ($assignment['link_courses']) {
-                    $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
+                    //$existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
+                    $existing_course = $DB->get_record('course', array('shortname' => $assignment['shortname']));
                     if (false === $existing_course) {   // unknown course
                         throw new Exception('Unknown course: '.$assignment['idnumber']);
                     } else {
@@ -1320,7 +1333,8 @@ class local_artena_external extends external_api {
                     $existing_course = $DB->get_record('course', array('idnumber' => $assignment['idnumber']));
                   } else {
                     //self::log_for_artena('create_enrol','get flip_visible linked course');
-                    $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
+                    //$existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
+                    $existing_course = $DB->get_record('course', array('shortname' => $assignment['shortname']));
                   }
                   $existing_course->visible = 0;
                   //self::log_for_artena('create_enrol','update course');
@@ -1340,6 +1354,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_enrol', 'EXCEPTION! ' . $e->getMessage());
+                self::rollback_suppress_exception($transaction);                
             }
         }
 
@@ -1355,7 +1370,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'username'   => new external_value(PARAM_INT, 'user name'),
+                    'username'   => new external_value(PARAM_RAW, 'user name'),
                     'coursename' => new external_value(PARAM_RAW, 'course fullname'),
                     'action'   => new external_value(PARAM_TEXT, 'action performed'),
                     'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
@@ -1422,7 +1437,8 @@ class local_artena_external extends external_api {
                 }
 
                 if ($assignment['link_courses']) {
-                    $existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
+                    //$existing_course = $DB->get_record('course', array('fullname' => $assignment['fullname'], 'shortname' => $assignment['shortname']));
+                    $existing_course = $DB->get_record('course', array('shortname' => $assignment['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $assignment['idnumber']));
                 }
@@ -1487,6 +1503,7 @@ class local_artena_external extends external_api {
             catch (Exception $e) {
                 self::log_for_artena('remove_enrol', 'EXCEPTION! ' . $e->getMessage());
                 $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -1501,7 +1518,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'username'   => new external_value(PARAM_TEXT, 'user name'),
+                    'username'   => new external_value(PARAM_RAW, 'user name'),
                     'coursename'   => new external_value(PARAM_RAW, 'course fullname'),
                     'action'   => new external_value(PARAM_TEXT, 'action performed'),
                     'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
@@ -1561,7 +1578,8 @@ class local_artena_external extends external_api {
 
             // get course
             if ($ar['link_courses']) {
-                $existing_course = $DB->get_record('course', array('fullname' => $ar['fullname'], 'shortname' => $ar['shortname']));
+                //$existing_course = $DB->get_record('course', array('fullname' => $ar['fullname'], 'shortname' => $ar['shortname']));
+                $existing_course = $DB->get_record('course', array('shortname' => $ar['shortname']));
             } else {
                 $existing_course = $DB->get_record('course', array('idnumber' => $ar['idnumber']));
             }
