@@ -228,7 +228,7 @@ class local_artena_external extends external_api {
                 // Check if this is a create or update request
                 if ($course['link_courses']) {
                     //$existing_course = $DB->get_record('course', array('fullname' => $course['fullname'], 'shortname' => $course['shortname']));
-                    $existing_course = $DB->get_record('course', array('shortname' => $course['shortname']));                    
+                    $existing_course = $DB->get_record('course', array('shortname' => $course['shortname']));
                 } else {
                     $existing_course = $DB->get_record('course', array('idnumber' => $course['idnumber']));
                 }
@@ -290,6 +290,7 @@ class local_artena_external extends external_api {
 
                     $updated_course = (array) $existing_course;
                     $updated_course['category'] = $course['categoryid'];
+                    $updated_course['startdate'] = $course['startdate'];
                     if (1 == $course['overwrite_names']) {
                       $updated_course['fullname'] = $course['fullname'];
                       $updated_course['shortname'] = $course['shortname'];
@@ -314,7 +315,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_course', 'EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);                
+                self::rollback_suppress_exception($transaction);
             }
         }
         self::log_for_artena('create_course', 'END');
@@ -376,9 +377,10 @@ class local_artena_external extends external_api {
         require_once($CFG->dirroot . "/course/lib.php");
         require_once($CFG->libdir . '/completionlib.php');
 
+        self::log_for_artena('change_course_id', 'BEGIN',1);
+
         $params = self::validate_parameters(self::change_course_id_parameters(),
                         array('courses' => $courses));
-
 
         foreach ($params['courses'] as $course) {
             try {
@@ -419,6 +421,8 @@ class local_artena_external extends external_api {
                 self::rollback_suppress_exception($transaction);
             }
         }
+
+        self::log_for_artena('change_course_id', 'END');
 
         return $resultcourses;
     }
@@ -655,7 +659,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_group', 'EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);                
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -780,7 +784,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_group', 'EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);                
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -994,7 +998,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_user', 'EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);                
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -1142,7 +1146,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_user', 'EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);                
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -1316,7 +1320,21 @@ class local_artena_external extends external_api {
 
                     self::log_for_artena('create_enrol',print_r($existing_group,1));
                     if (false === $existing_group) {
-                        throw new Exception('Unknown group: '.$assignment['groupidnumber']);
+                        //throw new Exception('Unknown group: '.$assignment['groupidnumber']);
+                        $new_group = array();
+                        $new_group['fullname'] = $assignment['fullname'];
+                        $new_group['shortname'] = $assignment['shortname'];
+                        $new_group['courseidnumber'] = $assignment['idnumber'];
+                        $new_group['groupidnumber'] = $assignment['groupidnumber'];
+                        $new_group['groupdescription'] = '';
+                        $new_group['link_courses'] = $assignment['link_courses'];
+                        $paramsgroup = array();
+                        $paramsgroup[] = $new_group;
+                        self::create_group($paramsgroup);
+                        $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $assignment['groupidnumber']));
+                        if (false === $existing_group) {
+                            throw new Exception('Unknown group: '.$assignment['groupidnumber']);
+                        }
                     }
                     $existing_memberships = groups_get_user_groups($existing_course->id, $existing_user->id);
                     foreach ($existing_memberships as $membership) {
@@ -1354,7 +1372,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_enrol', 'EXCEPTION! ' . $e->getMessage());
-                self::rollback_suppress_exception($transaction);                
+                self::rollback_suppress_exception($transaction);
             }
         }
 
@@ -1453,10 +1471,10 @@ class local_artena_external extends external_api {
                 }
 
                 if (false === ($enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $assignment['roleid'], 'courseid' => $existing_course->id)))) {
-                    throw new Exception('Unknown enrolment');
+                    throw new Exception('Unknown enrolment configuration for:' . $assignment['idnumber']);
                 }
                 if (false === ($user_enrolment = $DB->get_record('user_enrolments', array('userid' => $existing_user->id, 'enrolid' => $enrolment_configuration->id)))) {
-                    throw new Exception('Unknown enrolment');
+                    throw new Exception('Unknown enrolment for student: ' . $assignment['username'] . ' in course: ' . $assignment['idnumber']);
                 }
 
                 switch ($assignment['action']) {
