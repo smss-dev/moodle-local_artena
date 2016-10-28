@@ -20,10 +20,10 @@
  *
  * This local plugin enrols and redirects users to a pre-configured course after login
  *
- * @package    local
- * @subpackage local_artena
- * @copyright  2014 SMSS, www.smss.org.nz
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package local
+ * @subpackage artena
+ * @copyright 2016 Adapt IT Australasia
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['pluginname'] = 'Artena Integration';
 $string['enabled'] = 'Enabled';

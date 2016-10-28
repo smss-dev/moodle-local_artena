@@ -17,10 +17,10 @@
 /**
  * Core external functions and service definitions.
  *
- * @package    local
+ * @package local
  * @subpackage artena
- * @copyright  2013 SMSS
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright 2016 Adapt IT Australasia
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 $functions = array(

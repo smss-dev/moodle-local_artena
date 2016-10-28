@@ -21,10 +21,10 @@
  * This local plugin that adds a 'friendly url' version of Artena Integration plugin
  * to Moodle
  *
- * @package    local
- * @subpackage local_artena
- * @copyright  2014 SMSS, www.smss.org.nz
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package local
+ * @subpackage artena
+ * @copyright 2016 Adapt IT Australasia
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;

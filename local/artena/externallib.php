@@ -17,10 +17,10 @@
 /**
  * Moodle Artena web service plugin
  *
- * @package    local
+ * @package local
  * @subpackage artena
- * @copyright  2013 SMSS
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright 2016 Adapt IT Australasia
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once("$CFG->libdir/externallib.php");
@@ -153,6 +153,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'fullname' => new external_value(PARAM_TEXT, 'full name'),
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
                             'idnumber' => new external_value(PARAM_RAW, 'id number', VALUE_OPTIONAL),
@@ -281,7 +282,7 @@ class local_artena_external extends external_api {
                     }
                     $course['id'] = create_course((object) $course)->id;
                     self::log_for_artena('create_course', 'new course id=' . $course['id']);
-                    $resultcourses[] = array('id' => $course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'add');
+                    $resultcourses[] = array('artenaid' => $course['artenaid'], 'id' => $course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'add');
 
                 } else {    // update
                     self::log_for_artena('create_course', 'update course');
@@ -298,19 +299,19 @@ class local_artena_external extends external_api {
                     }
 
                     update_course((object) $updated_course);
-                    $resultcourses[] = array('id' => $updated_course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'update');
+                    $resultcourses[] = array('artenaid' => $course['artenaid'], 'id' => $updated_course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'update');
                 }
 
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('create_course', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                $resultcourses[] = array('id' => -1, 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => (isset($category) ? $category->name : ''), 'action'=> 'error', 'message' => $e->getMessage());
+                $resultcourses[] = array('artenaid' => $course['artenaid'], 'id' => -1, 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => (isset($category) ? $category->name : ''), 'action'=> 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('create_course', 'moodle EXCEPTION! ' . $e->getMessage());
-                $resultcourses[] = array('id' => -1, 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => (isset($category) ? $category->name : ''), 'action'=> 'error', 'message' => $e->getMessage());
+                $resultcourses[] = array('artenaid' => $course['artenaid'], 'id' => -1, 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => (isset($category) ? $category->name : ''), 'action'=> 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (Exception $e) {
@@ -330,6 +331,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                     'id' => new external_value(PARAM_INT, 'course id'),
                     'idnumber' => new external_value(PARAM_RAW, 'artena course idnumber'),
                     'fullname' => new external_value(PARAM_TEXT, 'full name'),
@@ -456,6 +458,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'fullname'      => new external_value(PARAM_TEXT, 'course full name'),
                             'shortname'     => new external_value(PARAM_TEXT, 'course short name'),
                             'idnumber'      => new external_value(PARAM_RAW, 'course id number'),
@@ -542,6 +545,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                     'idnumber'  => new external_value(PARAM_RAW, 'id number'),
                     'action' => new external_value(PARAM_TEXT, 'action performed'),
                     'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
@@ -562,6 +566,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'fullname' => new external_value(PARAM_TEXT, 'full name'),
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
                             'courseidnumber' => new external_value(PARAM_RAW, 'course id number', VALUE_OPTIONAL),
@@ -676,6 +681,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                     'id' => new external_value(PARAM_INT, 'group id'),
                     'name' => new external_value(PARAM_TEXT, 'group name'),
                     'coursename' => new external_value(PARAM_TEXT, 'course fullname'),
@@ -698,6 +704,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'fullname' => new external_value(PARAM_TEXT, 'full name'),
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
                             'courseidnumber' => new external_value(PARAM_RAW, 'course id number', VALUE_OPTIONAL),
@@ -801,6 +808,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                     'id' => new external_value(PARAM_INT, 'group id'),
                     'name' => new external_value(PARAM_TEXT, 'name'),
                     'action' => new external_value(PARAM_TEXT, 'action performed (delete,skip,error)'),
@@ -822,6 +830,7 @@ class local_artena_external extends external_api {
                 'users' => new external_multiple_structure(
                     new external_single_structure(
                         array(
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'username'    => new external_value(PARAM_RAW, 'Username policy is defined in Moodle security config'),
                             'password'    => new external_value(PARAM_RAW, 'Plain text password consisting of any characters'),
                             'firstname'   => new external_value(PARAM_NOTAGS, 'The first name(s) of the user'),
@@ -973,7 +982,7 @@ class local_artena_external extends external_api {
                         }
                     }
 
-                    $userids[] = array('id'=>$user['id'], 'username'=>$user['username'], 'action'=>'add');
+                    $userids[] = array('artenaid'=>$user['artenaid'], 'id'=>$user['id'], 'username'=>$user['username'], 'action'=>'add');
 
                 } else {    // existing user, respond as if a successful creation
                     /*
@@ -982,18 +991,18 @@ class local_artena_external extends external_api {
                     $existing_user->email = $user['email'];
                     $DB->update_record('user', $existing_user);
                     */
-                    $userids[] = array('id' => $existing_user->id, 'username' => $existing_user->id, 'action'=>'update');
+                    $userids[] = array('artenaid'=>$user['artenaid'], 'id' => $existing_user->id, 'username' => $existing_user->id, 'action'=>'update');
                 }
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('create_user', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                $userids[] = array('id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                $userids[] = array('artenaid'=>$user['artenaid'], 'id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('create_user', 'moodle EXCEPTION! ' . $e->getMessage());
-                $userids[] = array('id'=>$user['id'], 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                $userids[] = array('artenaid'=>$user['artenaid'], 'id'=>$user['id'], 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (Exception $e) {
@@ -1056,6 +1065,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                     'id' => new external_value(PARAM_INT, 'user id'),
                     'username' => new external_value(PARAM_RAW, 'user name'),
                     'action' => new external_value(PARAM_RAW, 'action performed (add, edit, error)'),
@@ -1077,6 +1087,7 @@ class local_artena_external extends external_api {
                 'users' => new external_multiple_structure(
                     new external_single_structure(
                         array(
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'username'    => new external_value(PARAM_RAW, 'Username policy is defined in Moodle security config'),
                         )
                     ), 'users to add'
@@ -1130,18 +1141,18 @@ class local_artena_external extends external_api {
                     throw new Exception('Unknown user: '.$user['username']);
                 } else {    // existing user, delete
                     user_delete_user($existing_user);
-                    $userids[] = array('id' => $existing_user->id, 'username' => $existing_user->username, 'action' => 'delete');
+                    $userids[] = array('artenaid'=>$user['artenaid'], 'id' => $existing_user->id, 'username' => $existing_user->username, 'action' => 'delete');
                 }
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('remove_user', 'invalid parameter EXCEPTION! ' . $e->getMessage());
-                $userids[] = array('id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                $userids[] = array('artenaid'=>$user['artenaid'], 'id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('remove_user', 'moodle EXCEPTION! ' . $e->getMessage());
-                $userids[] = array('id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
+                $userids[] = array('artenaid'=>$user['artenaid'], 'id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (Exception $e) {
@@ -1161,7 +1172,8 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'id'       => new external_value(PARAM_INT, 'user id'),
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'id' => new external_value(PARAM_INT, 'user id'),
                     'username' => new external_value(PARAM_RAW, 'user name'),
                     'action' => new external_value(PARAM_TEXT, 'action performed'),
                     'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
@@ -1181,6 +1193,7 @@ class local_artena_external extends external_api {
                 'assignments' => new external_multiple_structure(
                     new external_single_structure(
                         array(
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'username'      => new external_value(PARAM_RAW, 'The user that is going to be assigned'),
                             'fullname'      => new external_value(PARAM_TEXT, 'full name'),
                             'shortname'     => new external_value(PARAM_TEXT, 'course short name'),
@@ -1299,7 +1312,7 @@ class local_artena_external extends external_api {
                     // create the user_enrolments record (lib/enrollib.php)
                     $plugin = enrol_get_plugin('manual');
                     $plugin->enrol_user($enrolment_configuration, $existing_user->id, $assignment['roleid'], $assignment['timestart'], $assignment['timeend']);
-                    $enrolments[] = array('username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'add');
+                    $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'add');
 
                 } else {    // update
 
@@ -1310,7 +1323,7 @@ class local_artena_external extends external_api {
                     $user_enrolment->status = ENROL_USER_ACTIVE;
                     //self::log_for_artena('create_enrol','update user_enrolments');
                     $DB->update_record('user_enrolments', $user_enrolment);
-                    $enrolments[] = array('username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'update');
+                    $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'update');
                 }
 
                 // assign group, if required
@@ -1362,12 +1375,12 @@ class local_artena_external extends external_api {
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('create_enrol','parameter EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('userid'=>-1, 'courseid'=>-1, 'action'=>'error', 'message'=>$e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username'=>'', 'coursename'=>'', 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('create_enrol', 'moodle EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('userid'=>-1, 'courseid'=>-1, 'action'=>'error', 'message'=>$e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username'=>'', 'coursename'=>'', 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (Exception $e) {
@@ -1388,6 +1401,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                     'username'   => new external_value(PARAM_RAW, 'user name'),
                     'coursename' => new external_value(PARAM_RAW, 'course fullname'),
                     'action'   => new external_value(PARAM_TEXT, 'action performed'),
@@ -1407,6 +1421,7 @@ class local_artena_external extends external_api {
                 'assignments' => new external_multiple_structure(
                     new external_single_structure(
                         array(
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                             'username'      => new external_value(PARAM_RAW, 'The user that is going to be assigned'),
                             'fullname'      => new external_value(PARAM_TEXT, 'course full name'),
                             'shortname'     => new external_value(PARAM_TEXT, 'course short name'),
@@ -1504,23 +1519,23 @@ class local_artena_external extends external_api {
                         break;
                 }
 
-                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'delete');
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'delete');
 
                 $transaction->allow_commit();
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('remove_enrol','parameter EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('remove_enrol', 'moodle EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_enrol', 'EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -1536,6 +1551,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
                     'username'   => new external_value(PARAM_RAW, 'user name'),
                     'coursename'   => new external_value(PARAM_RAW, 'course fullname'),
                     'action'   => new external_value(PARAM_TEXT, 'action performed'),

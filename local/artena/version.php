@@ -17,16 +17,16 @@
 /**
  * Version details.
  *
- * @package    local
+ * @package local
  * @subpackage artena
- * @copyright  2013 SMSS
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright 2016 Adapt IT Australasia
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version   = 2016072800;
-$plugin->release   = 'Artena Plugin Release 1.3.6';
+$plugin->version   = 2016082300;
+$plugin->release   = 'Artena Plugin Release 1.3.7';
 $plugin->maturity  = MATURITY_RC;
 $plugin->requires  = 2011120500; // Moodle 2.2 release and upwards
 $plugin->component = 'local_artena';
