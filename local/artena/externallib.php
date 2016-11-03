@@ -1676,8 +1676,8 @@ class local_artena_external extends external_api {
 
     public static function log_for_artena($method,$data,$new=0) {
         global $CFG;
-
-        $fn = $CFG->dataroot . '\\' . $method . '.log';
+        $method = clean_param($method, PARAM_ALPHANUMEXT); // Make sure this is a simple action and does not contain dots.
+        $fn = $CFG->dataroot . '/' . $method . '.log';
         if (1 == $new) {
             $fp = @fopen($fn,'w+');
         } else {
