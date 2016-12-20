@@ -129,20 +129,38 @@ $functions = array(
         'classname'   => 'local_artena_external',
         'methodname'  => 'get_grades',
         'classpath'   => 'local/artena/externallib.php',
-        'description' => 'Get course results.',
+        'description' => 'Get course results for a specific set of enrolments.',
         'type'        => 'write',
         'capabilities'=> 'enrol/manual:manage',
     ),
-/*
+
+    'artena_get_grades_after' => array(
+        'classname'   => 'local_artena_external',
+        'methodname'  => 'get_grades_after',
+        'classpath'   => 'local/artena/externallib.php',
+        'description' => 'Get course results entered after a given date.',
+        'type'        => 'read',
+        'capabilities'=> 'enrol/manual:manage',
+    ),
+
     'artena_get_attendance' => array(
         'classname'   => 'local_artena_external',
         'methodname'  => 'get_attendance',
         'classpath'   => 'local/artena/externallib.php',
-        'description' => 'Get attendance.',
-        'type'        => 'write',
+        'description' => 'Get attendance for specific set of enrolments.',
+        'type'        => 'read',
         'capabilities'=> 'mod/attendance:view',
     ),
-*/    
+
+    'artena_get_attendance_after' => array(
+        'classname'   => 'local_artena_external',
+        'methodname'  => 'get_attendance_after',
+        'classpath'   => 'local/artena/externallib.php',
+        'description' => 'Get all attendance entered after a given date.',
+        'type'        => 'read',
+        'capabilities'=> 'mod/attendance:view',
+    ),
+
 );
 
 $services = array(
@@ -160,7 +178,9 @@ $services = array(
             'artena_create_enrol',
             'artena_remove_enrol',
             'artena_get_grades',
-            //'artena_get_attendance',
+            'artena_get_grades_after',
+            'artena_get_attendance',
+            'artena_get_attendance_after',
             ),
         'enabled' => 1,
         'restrictedusers' => 0,

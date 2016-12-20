@@ -115,7 +115,7 @@ class local_artena_external extends external_api {
         }
         catch (Exception $e) {
             self::log_for_artena('get_categories', 'EXCEPTION! ' . $e->getMessage());
-            self::rollback_suppress_exception($transaction);
+            $result[] = array('id'=>-1, 'name'=>'', 'visible'=>0, 'path'=>'', 'depth'=>-1, 'message'=>$e->getMessage());
         }
 
         return $result;
@@ -153,7 +153,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'fullname' => new external_value(PARAM_TEXT, 'full name'),
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
                             'idnumber' => new external_value(PARAM_RAW, 'id number', VALUE_OPTIONAL),
@@ -316,6 +316,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_course', 'EXCEPTION! ' . $e->getMessage());
+                $resultcourses[] = array('artenaid' => $course['artenaid'], 'id' => -1, 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => (isset($category) ? $category->name : ''), 'action'=> 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -331,7 +332,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'id' => new external_value(PARAM_INT, 'course id'),
                     'idnumber' => new external_value(PARAM_RAW, 'artena course idnumber'),
                     'fullname' => new external_value(PARAM_TEXT, 'full name'),
@@ -420,6 +421,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('change_course_id', 'EXCEPTION! ' . $e->getMessage());
+                $resultcourses[] = array('id' => -1, 'idnumber' => $course['idnumbernew'], 'action'=> 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -458,7 +460,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'fullname'      => new external_value(PARAM_TEXT, 'course full name'),
                             'shortname'     => new external_value(PARAM_TEXT, 'course short name'),
                             'idnumber'      => new external_value(PARAM_RAW, 'course id number'),
@@ -530,6 +532,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_course', 'EXCEPTION! ' . $e->getMessage());
+                $resultcourses[] = array('idnumber' => $course['idnumber'], 'action'=> 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -545,7 +548,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'idnumber'  => new external_value(PARAM_RAW, 'id number'),
                     'action' => new external_value(PARAM_TEXT, 'action performed'),
                     'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
@@ -566,7 +569,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'fullname' => new external_value(PARAM_TEXT, 'full name'),
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
                             'courseidnumber' => new external_value(PARAM_RAW, 'course id number', VALUE_OPTIONAL),
@@ -664,6 +667,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_group', 'EXCEPTION! ' . $e->getMessage());
+                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'coursename' => $group['fullname'], 'action'=> 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -681,7 +685,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'id' => new external_value(PARAM_INT, 'group id'),
                     'name' => new external_value(PARAM_TEXT, 'group name'),
                     'coursename' => new external_value(PARAM_TEXT, 'course fullname'),
@@ -704,7 +708,7 @@ class local_artena_external extends external_api {
                     new external_single_structure(
                         array(
                             // artena supplies
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'fullname' => new external_value(PARAM_TEXT, 'full name'),
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
                             'courseidnumber' => new external_value(PARAM_RAW, 'course id number', VALUE_OPTIONAL),
@@ -791,6 +795,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_group', 'EXCEPTION! ' . $e->getMessage());
+                $resultgroups[] = array('id' => -1, 'name' => $group['groupidnumber'], 'action'=> 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -808,7 +813,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'id' => new external_value(PARAM_INT, 'group id'),
                     'name' => new external_value(PARAM_TEXT, 'name'),
                     'action' => new external_value(PARAM_TEXT, 'action performed (delete,skip,error)'),
@@ -830,7 +835,7 @@ class local_artena_external extends external_api {
                 'users' => new external_multiple_structure(
                     new external_single_structure(
                         array(
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'username'    => new external_value(PARAM_RAW, 'Username policy is defined in Moodle security config'),
                             'password'    => new external_value(PARAM_RAW, 'Plain text password consisting of any characters'),
                             'firstname'   => new external_value(PARAM_NOTAGS, 'The first name(s) of the user'),
@@ -1007,6 +1012,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_user', 'EXCEPTION! ' . $e->getMessage());
+                $userids[] = array('artenaid'=>$user['artenaid'], 'id'=>$user['id'], 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -1065,7 +1071,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'id' => new external_value(PARAM_INT, 'user id'),
                     'username' => new external_value(PARAM_RAW, 'user name'),
                     'action' => new external_value(PARAM_RAW, 'action performed (add, edit, error)'),
@@ -1087,7 +1093,7 @@ class local_artena_external extends external_api {
                 'users' => new external_multiple_structure(
                     new external_single_structure(
                         array(
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'username'    => new external_value(PARAM_RAW, 'Username policy is defined in Moodle security config'),
                         )
                     ), 'users to add'
@@ -1157,6 +1163,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_user', 'EXCEPTION! ' . $e->getMessage());
+                $userids[] = array('artenaid'=>$user['artenaid'], 'id'=>-1, 'username'=>$user['username'], 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -1172,7 +1179,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'id' => new external_value(PARAM_INT, 'user id'),
                     'username' => new external_value(PARAM_RAW, 'user name'),
                     'action' => new external_value(PARAM_TEXT, 'action performed'),
@@ -1193,7 +1200,7 @@ class local_artena_external extends external_api {
                 'assignments' => new external_multiple_structure(
                     new external_single_structure(
                         array(
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'username'      => new external_value(PARAM_RAW, 'The user that is going to be assigned'),
                             'fullname'      => new external_value(PARAM_TEXT, 'full name'),
                             'shortname'     => new external_value(PARAM_TEXT, 'course short name'),
@@ -1298,6 +1305,7 @@ class local_artena_external extends external_api {
                 }
 
                 if ($new_enrolment) {   // create
+                    self::log_for_artena('create_enrol','new enrolment');
 
                     // Ensure the current user is allowed to run this function in the enrolment context
                     require_capability('moodle/role:assign', $context);
@@ -1315,6 +1323,7 @@ class local_artena_external extends external_api {
                     $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'add');
 
                 } else {    // update
+                    self::log_for_artena('create_enrol','existing enrolment');
 
                     // update user_enrolments with the start/finish timestamps for this enrolment
                     $user_enrolment = $DB->get_record('user_enrolments', array('userid' => $existing_user->id, 'enrolid' => $enrolment_configuration->id));
@@ -1385,6 +1394,7 @@ class local_artena_external extends external_api {
             }
             catch (Exception $e) {
                 self::log_for_artena('create_enrol', 'EXCEPTION! ' . $e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username'=>'', 'coursename'=>'', 'action'=>'error', 'message'=>$e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -1401,7 +1411,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'username'   => new external_value(PARAM_RAW, 'user name'),
                     'coursename' => new external_value(PARAM_RAW, 'course fullname'),
                     'action'   => new external_value(PARAM_TEXT, 'action performed'),
@@ -1421,7 +1431,7 @@ class local_artena_external extends external_api {
                 'assignments' => new external_multiple_structure(
                     new external_single_structure(
                         array(
-                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                             'username'      => new external_value(PARAM_RAW, 'The user that is going to be assigned'),
                             'fullname'      => new external_value(PARAM_TEXT, 'course full name'),
                             'shortname'     => new external_value(PARAM_TEXT, 'course short name'),
@@ -1525,17 +1535,17 @@ class local_artena_external extends external_api {
 
             } catch (invalid_parameter_exception $e) {
                 self::log_for_artena('remove_enrol','parameter EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $assignment['fullname'], 'action' => 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (moodle_exception $e) {
                 self::log_for_artena('remove_enrol', 'moodle EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $assignment['fullname'], 'action' => 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
             catch (Exception $e) {
                 self::log_for_artena('remove_enrol', 'EXCEPTION! ' . $e->getMessage());
-                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $existing_course->fullname, 'action' => 'error', 'message' => $e->getMessage());
+                $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $assignment['username'], 'coursename' => $assignment['fullname'], 'action' => 'error', 'message' => $e->getMessage());
                 self::rollback_suppress_exception($transaction);
             }
         }
@@ -1551,7 +1561,7 @@ class local_artena_external extends external_api {
         return new external_multiple_structure(
             new external_single_structure(
                 array(
-                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL), 
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
                     'username'   => new external_value(PARAM_RAW, 'user name'),
                     'coursename'   => new external_value(PARAM_RAW, 'course fullname'),
                     'action'   => new external_value(PARAM_TEXT, 'action performed'),
@@ -1612,7 +1622,6 @@ class local_artena_external extends external_api {
 
             // get course
             if ($ar['link_courses']) {
-                //$existing_course = $DB->get_record('course', array('fullname' => $ar['fullname'], 'shortname' => $ar['shortname']));
                 $existing_course = $DB->get_record('course', array('shortname' => $ar['shortname']));
             } else {
                 $existing_course = $DB->get_record('course', array('idnumber' => $ar['idnumber']));
@@ -1665,6 +1674,449 @@ class local_artena_external extends external_api {
         );
     }
 
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_grades_after_parameters() {
+        return new external_function_parameters(
+            array(
+                'parameters' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            // artena supplies
+                            'retrievedate' => new external_value(PARAM_INT, 'timestamp after which to retrieve record inserts/updates'),
+                        )
+                    ), 'parameters by which to retrieve grades'
+                )
+            )
+        );
+    }
+
+    /**
+     * Get grades
+     * @param $academicrecords
+     * @return array grades (course, student, final grade)
+     * @throws dml_transaction_exception
+     * @throws invalid_parameter_exception
+     * @internal param array $grades
+     */
+    public static function get_grades_after($parameters) {
+        global $CFG, $DB;
+
+        self::log_for_artena('get_grades_after','BEGIN',1);
+
+        $params = self::validate_parameters(self::get_grades_after_parameters(), array('parameters'=>$parameters));
+        self::log_for_artena('get_grades_after',"params validated:\n".print_r($params,1));
+        $retrievedate = $params['parameters'][0]['retrievedate'];
+
+        $resultgrades = array();
+        try {
+
+            $grades = $DB->get_recordset_select('grade_grades', "timemodified >= ".$retrievedate);
+
+            self::log_for_artena('get_grades_after',"grades=\n".print_r($grades,1));
+            foreach ($grades as $gg) {
+
+                $grade_rec = array(
+                    'studentname' => '',
+                    'coursename' => '',
+                    'startdate' => '',
+                    'finishdate' => '',
+                    'gradedate' => $gg->timemodified,
+                    'result' => $gg->finalgrade,
+                    'action' => 'retrieve',
+                    );
+
+                // get student
+                $grade_student = $DB->get_record('user', array('id' => $gg->userid));
+                $grade_rec['studentname'] = $grade_student->username;
+
+                // get course
+                $grade_item = $DB->get_record('grade_items', array('id' => $gg->itemid, 'itemtype' => 'course'));
+
+                if (!$grade_item) {
+                    // not the course final grade
+                    continue;
+                }
+
+                $grade_course = $DB->get_record('course', array('id' => $grade_item->courseid));
+                $grade_rec['coursename'] = $grade_course->shortname;
+
+                // get enrolment
+                $grade_enrolconfig = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => 5, 'courseid' => $grade_course->id));
+                $grade_enrolment = $DB->get_record('user_enrolments', array('userid' => $grade_student->id, 'enrolid' => $grade_enrolconfig->id));
+                $grade_rec['startdate'] = $grade_enrolment->timestart;
+                $grade_rec['finishdate'] = $grade_enrolment->timeend;
+
+                $resultgrades[] = $grade_rec;
+            }
+
+        } catch (invalid_parameter_exception $e) {
+            self::log_for_artena('get_grades_after', 'invalid parameter EXCEPTION! ' . $e->getMessage());
+            self::rollback_suppress_exception($transaction);
+        }
+        catch (moodle_exception $e) {
+            self::log_for_artena('get_grades_after', 'moodle EXCEPTION! ' . $e->getMessage());
+            self::rollback_suppress_exception($transaction);
+        }
+        catch (Exception $e) {
+            self::log_for_artena('get_grades_after', 'EXCEPTION! ' . $e->getMessage());
+            self::rollback_suppress_exception($transaction);
+        }
+
+        self::log_for_artena('get_grades_after',"result=\n". print_r($resultgrades,1));
+        self::log_for_artena('get_grades_after','END');
+
+        return $resultgrades;
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_grades_after_returns() {
+        return new external_multiple_structure(
+            new external_single_structure(
+                array(
+                    'studentname'  => new external_value(PARAM_RAW, 'student username'),
+                    'coursename' => new external_value(PARAM_RAW, 'course shortname'),
+                    'startdate' => new external_value(PARAM_INT, 'timestamp when the enrolment starts', VALUE_OPTIONAL),
+                    'finishdate' => new external_value(PARAM_INT, 'timestamp when the enrolment ends', VALUE_OPTIONAL),
+                    'gradedate' => new external_value(PARAM_INT, 'timestamp when the grade was entered', VALUE_OPTIONAL),
+                    'result'  => new external_value(PARAM_FLOAT, 'final grade'),
+                    'action' => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
+                )
+            )
+        );
+    }
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_attendance_parameters() {
+        return new external_function_parameters(
+            array(
+                'enrolments' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            // artena supplies
+                            'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
+                            'username' => new external_value(PARAM_RAW, 'The user whose grade will be retrieved'),
+                            'coursename' => new external_value(PARAM_TEXT, 'course short name'),
+                            'groupname' => new external_value(PARAM_TEXT, 'group short name'),
+                            'link_courses' => new external_value(PARAM_INT, 'ARTENA FIELD (1: link courses of same name, 0: treat all as distinct)', VALUE_OPTIONAL),
+                        )
+                    ), 'courses for which to retrieve attendance'
+                )
+            )
+        );
+    }
+
+    /**
+     * Get attendance
+     * @param $enrolments
+     * @return array attendance (course, student, date, attendance status)
+     * @throws dml_transaction_exception
+     * @throws invalid_parameter_exception
+     * @internal param array $attendance
+     */
+    public static function get_attendance($enrolments) {
+        global $CFG, $DB;
+
+        self::log_for_artena('get_attendance','BEGIN',1);
+
+        $plugin = core_plugin_manager::instance()->get_plugin_info('mod_attendance');
+        self::log_for_artena('get_attendance',"plugins=\n" . print_r($plugins,1));
+        if (!$plugin) {
+            $resultattendance[] = array(
+                'username' => '',
+                'coursename' => '',
+                'groupname' => '',
+                'action' => 'skip',
+                'message' => 'attendance plugin not installed',
+                );
+
+            return $resultattendance;
+        }
+
+        $params = self::validate_parameters(self::get_attendance_parameters(), array('enrolments'=>$enrolments));
+
+        foreach ($params['enrolments'] as $enr) {
+            try {
+                $transaction = $DB->start_delegated_transaction();
+
+                // get student
+                $student = $DB->get_record('user', array('username' => $enr['username']));
+                if (false === $student) {
+                    continue;
+                }
+
+                // get course
+                if ($enr['link_courses']) {
+                    $existing_course = $DB->get_record('course', array('shortname' => $enr['shortname']));
+                } else {
+                    $existing_course = $DB->get_record('course', array('idnumber' => $enr['courseidnumber']));
+                }
+
+                if (false === $existing_course) {
+                    continue;
+                }
+
+                if  ($enr['groupidnumber'] == ''){
+                    continue;
+                }
+                $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $enr['groupidnumber']));
+
+                // get attendance
+                $attendance_item = $DB->get_record('attendance', array('course' => $existing_course->id));
+
+                $statuses_hash = array();
+                $attendance_statuses = $DB->get_records('attendance_statuses', array('attendanceid' => $attendance_item->id));
+                foreach ($attendance_statuses as $ats) {
+                    $statuses_hash[$ats->id] = $ats->acronym;
+                }
+
+                $attendance_sessions = $DB->get_records('attendance_sessions', array('attendanceid' => $attendance_item->id, 'groupid' => $existing_group->id));
+                foreach ($attendance_sessions as $session) {
+                    $attendance_items = $DB->get_records('attendance_log', array('sessionid' => $session->id, 'studentid' => $student->id));
+
+                    foreach ($attendance_items as $atti) {
+                        // populate return structure
+                        //
+                        $resultattendance[] = array(
+                            'artenaid' => $enr['artenaid'],
+                            'username' => $enr['username'],
+                            'coursename' => $enr['coursename'],
+                            'groupname' => $enr['groupname'],
+                            'attendancename' => $attendance_item->name,
+                            'attendancedate' => $atti->timetaken,
+                            'attendancenote' => $atti->remarks,
+                            'attendance' => $statuses_hash[$atti->statusid],
+                            'action' => 'retrieve'
+                            );
+                    }
+                }
+                $transaction->allow_commit();
+
+            } catch (invalid_parameter_exception $e) {
+                self::log_for_artena('get_attendance', 'invalid parameter EXCEPTION! ' . $e->getMessage());
+                $resultattendance[] = array(
+                    'username' => $enr['username'],
+                    'coursename' => $enr['coursename'],
+                    'groupname' => $enr['groupname'],
+                    'action'=> 'error',
+                    'message' => $e->getMessage()
+                    );
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (moodle_exception $e) {
+                self::log_for_artena('get_attendance', 'moodle EXCEPTION! ' . $e->getMessage());
+                $resultattendance[] = array(
+                    'username' => $enr['username'],
+                    'coursename' => $enr['coursename'],
+                    'groupname' => $enr['groupname'],
+                    'action'=> 'error',
+                    'message' => $e->getMessage()
+                    );
+                self::rollback_suppress_exception($transaction);
+            }
+            catch (Exception $e) {
+                self::log_for_artena('get_attendance', 'EXCEPTION! ' . $e->getMessage());
+                $resultattendance[] = array(
+                    'username' => $enr['username'],
+                    'coursename' => $enr['coursename'],
+                    'groupname' => $enr['groupname'],
+                    'action'=> 'error',
+                    'message' => $e->getMessage()
+                    );
+                self::rollback_suppress_exception($transaction);
+            }
+        }
+
+        self::log_for_artena('get_attendance','END ' . print_r($resultattendance,1));
+
+        return $resultattendance;
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_attendance_returns() {
+        return new external_multiple_structure(
+            new external_single_structure(
+                array(
+                    'artenaid' => new external_value(PARAM_INT, 'artena primary key', VALUE_OPTIONAL),
+                    'username'  => new external_value(PARAM_RAW, 'student username'),
+                    'coursename' => new external_value(PARAM_TEXT, 'course short name'),
+                    'groupname' => new external_value(PARAM_RAW, 'group short name'),
+                    'attendancename' => new external_value(PARAM_TEXT, 'attendance name', VALUE_OPTIONAL),
+                    'attendancedate' => new external_value(PARAM_INT, 'timestamp when the attendance was entered', VALUE_OPTIONAL),
+                    'attendancenote' => new external_value(PARAM_TEXT, 'attendance note', VALUE_OPTIONAL),
+                    'attendance'  => new external_value(PARAM_FLOAT, 'attendance status', VALUE_OPTIONAL),
+                    'action' => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
+                )
+            )
+        );
+    }
+
+    /**
+     * Returns description of method parameters
+     * @return external_function_parameters
+     */
+    public static function get_attendance_after_parameters() {
+        return new external_function_parameters(
+            array(
+                'parameters' => new external_multiple_structure(
+                    new external_single_structure(
+                        array(
+                            // artena supplies
+                            'retrievedate' => new external_value(PARAM_INT, 'timestamp after which to retrieve record inserts/updates'),
+                        )
+                    ), 'parameters by which to retrieve attendance'
+                )
+            )
+        );
+    }
+
+    /**
+     * Get attendance set
+     * @param $parameters
+     * @return array attendance (course, student, date, attendance status)
+     * @throws dml_transaction_exception
+     * @throws invalid_parameter_exception
+     * @internal param array $attendance
+     */
+    public static function get_attendance_after($parameters) {
+        global $CFG, $DB;
+
+        self::log_for_artena('get_attendance_after','BEGIN',1);
+
+        $plugin = core_plugin_manager::instance()->get_plugin_info('mod_attendance');
+        self::log_for_artena('get_attendance_after',"plugin=\n" . print_r($plugin,1));
+        if (!$plugin) {
+            $resultattendance[] = array(
+                'username' => '',
+                'coursename' => '',
+                'groupname' => '',
+                'action' => 'skip',
+                'message' => 'attendance plugin not installed',
+                );
+
+            return $resultattendance;
+        }
+
+        $params = self::validate_parameters(self::get_attendance_after_parameters(), array('parameters'=>$parameters));
+        self::log_for_artena('get_attendance_after',"params validated:\n".print_r($params,1));
+        $retrievedate = $params['parameters'][0]['retrievedate'];
+
+        try {
+            $transaction = $DB->start_delegated_transaction();
+
+            // get records where attendance was recently taken
+            self::log_for_artena('get_attendance_after',"retrievedate=".$retrievedate);
+            $attendance_log_items = $DB->get_recordset_select('attendance_log', "timetaken >= ".$retrievedate);
+
+            foreach ($attendance_log_items as $atti) {
+
+                self::log_for_artena('get_attendance_after',"atti=\n".print_r($atti,1));
+                $attendance_rec = array(
+                    'username' => '',
+                    'coursename' => '',
+                    'groupname' => '',
+                    'activityname' => '',
+                    'activitydate' => '',
+                    'activityduration' => '',
+                    'attendancedate' => $atti->timetaken,
+                    'attendancenote' => $atti->remarks,
+                    'attendance' => '',
+                    'action' => 'retrieve',
+                    );
+
+                $attendance_user = $DB->get_record('user', array('id' => $atti->studentid));
+                self::log_for_artena('get_attendance_after',"attendance_user=\n".print_r($attendance_user,1));
+
+                $attendance_session = $DB->get_record('attendance_sessions', array('id' => $atti->sessionid));
+                self::log_for_artena('get_attendance_after',"attendance_session=\n".print_r($attendance_session,1));
+
+                $attendance_item = $DB->get_record('attendance', array('id' => $attendance_session->attendanceid));
+                self::log_for_artena('get_attendance_after',"attendance_item=\n".print_r($attendance_item,1));
+
+                $statuses_hash = array();
+                $attendance_statuses = $DB->get_records('attendance_statuses', array('attendanceid' => $attendance_item->id));
+                foreach ($attendance_statuses as $ats) {
+                    $statuses_hash[$ats->id] = $ats->acronym;
+                }
+                self::log_for_artena('get_attendance_after',"statuses_hash=\n".print_r($statuses_hash,1));
+
+                $attendance_course = $DB->get_record('course', array('id' => $attendance_item->course));
+                self::log_for_artena('get_attendance_after',"attendance_course=\n".print_r($attendance_course,1));
+
+                $existing_memberships = groups_get_user_groups($attendance_item->course, $attendance_user->id);
+                self::log_for_artena('get_attendance_after',"existing_memberships=\n".print_r($existing_memberships,1));
+                $groupname = groups_get_group_name($existing_memberships[0][0]);
+                self::log_for_artena('get_attendance_after',"groupname=".$groupname);
+
+                $attendance_rec['coursename'] = $attendance_course->shortname;
+                $attendance_rec['groupname'] = ($groupname == '') ? '<no group assigned>' : $groupname;
+                $attendance_rec['username'] = $attendance_user->username;
+                $attendance_rec['activityname'] = $attendance_session->description;
+                $attendance_rec['activitydate'] = $attendance_session->sessdate;
+                $attendance_rec['activityduration'] = $attendance_session->duration;
+                $attendance_rec['attendance'] = $statuses_hash[$atti->statusid];
+
+                $resultattendance[] = $attendance_rec;
+            }
+
+            $transaction->allow_commit();
+
+        } catch (invalid_parameter_exception $e) {
+            self::log_for_artena('get_attendance_after', 'invalid parameter EXCEPTION! ' . $e->getMessage());
+            self::rollback_suppress_exception($transaction);
+        }
+        catch (moodle_exception $e) {
+            self::log_for_artena('get_attendance_after', 'moodle EXCEPTION! ' . $e->getMessage());
+            self::rollback_suppress_exception($transaction);
+        }
+        catch (Exception $e) {
+            self::log_for_artena('get_attendance_after', 'EXCEPTION! ' . $e->getMessage());
+            self::rollback_suppress_exception($transaction);
+        }
+
+        self::log_for_artena('get_attendance_after',"result=\n". print_r($resultattendance,1));
+        self::log_for_artena('get_attendance_after','END');
+
+        return $resultattendance;
+    }
+
+    /**
+     * Returns description of method result value
+     * @return external_description
+     */
+    public static function get_attendance_after_returns() {
+        return new external_multiple_structure(
+            new external_single_structure(
+                array(
+                    'username'  => new external_value(PARAM_RAW, 'student username'),
+                    'coursename' => new external_value(PARAM_TEXT, 'course shortname'),
+                    'groupname' => new external_value(PARAM_RAW, 'group shortname'),
+                    'activityname' => new external_value(PARAM_RAW, 'activity name', VALUE_OPTIONAL),
+                    'activitydate' => new external_value(PARAM_INT, 'activity datetime', VALUE_OPTIONAL),
+                    'activityduration' => new external_value(PARAM_INT, 'activity duration', VALUE_OPTIONAL),
+                    'attendancedate' => new external_value(PARAM_INT, 'timestamp when the attendance was entered', VALUE_OPTIONAL),
+                    'attendancenote' => new external_value(PARAM_TEXT, 'attendance note', VALUE_OPTIONAL),
+                    'attendance'  => new external_value(PARAM_TEXT, 'attendance status', VALUE_OPTIONAL),
+                    'action' => new external_value(PARAM_TEXT, 'action performed'),
+                    'message' => new external_value(PARAM_RAW, 'result message', VALUE_OPTIONAL),
+                )
+            )
+        );
+    }
+
     public static function rollback_suppress_exception(moodle_transaction $transaction) {
         global $DB;
         $e = new Exception();
@@ -1677,7 +2129,7 @@ class local_artena_external extends external_api {
     public static function log_for_artena($method,$data,$new=0) {
         global $CFG;
 
-        $fn = $CFG->dataroot . '\\' . $method . '.log';
+        $fn = $CFG->dataroot . '/' . $method . '.log';
         if (1 == $new) {
             $fp = @fopen($fn,'w+');
         } else {
