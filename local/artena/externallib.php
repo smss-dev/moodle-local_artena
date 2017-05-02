@@ -158,7 +158,8 @@ class local_artena_external extends external_api {
                             'shortname' => new external_value(PARAM_TEXT, 'course short name'),
                             'idnumber' => new external_value(PARAM_RAW, 'id number', VALUE_OPTIONAL),
                             'summary' => new external_value(PARAM_RAW, 'summary', VALUE_OPTIONAL),
-                            'startdate' => new external_value(PARAM_INT, 'timestamp when the course start', VALUE_OPTIONAL),
+                            'startdate' => new external_value(PARAM_INT, 'timestamp when the course starts', VALUE_OPTIONAL),
+                            'enddate' => new external_value(PARAM_INT, 'timestamp when the course finishes', VALUE_OPTIONAL),
                             'categoryid' => new external_value(PARAM_INT, 'category id'),
                             'visible' => new external_value(PARAM_INT, '1: available to student, 0:not available', VALUE_OPTIONAL),
 
@@ -277,9 +278,11 @@ class local_artena_external extends external_api {
 
                     $course['category'] = $course['categoryid'];
                     self::log_for_artena('create_course', 'new course obj=' . print_r($course,1));
+                    /*
                     if ($course['link_courses']){
                         $course['idnumber'] = '';
                     }
+                    */
                     $course['id'] = create_course((object) $course)->id;
                     self::log_for_artena('create_course', 'new course id=' . $course['id']);
                     $resultcourses[] = array('artenaid' => $course['artenaid'], 'id' => $course['id'], 'idnumber' => $course['idnumber'], 'fullname' => $course['fullname'], 'category' => $category->name, 'action'=> 'add');
@@ -292,6 +295,9 @@ class local_artena_external extends external_api {
                     $updated_course = (array) $existing_course;
                     $updated_course['category'] = $course['categoryid'];
                     $updated_course['startdate'] = $course['startdate'];
+                    if (isset($course['enddate'])) {
+                      $updated_course['enddate'] = $course['enddate'];
+                    }
                     if (1 == $course['overwrite_names']) {
                       $updated_course['fullname'] = $course['fullname'];
                       $updated_course['shortname'] = $course['shortname'];
@@ -575,6 +581,10 @@ class local_artena_external extends external_api {
                             'courseidnumber' => new external_value(PARAM_RAW, 'course id number', VALUE_OPTIONAL),
                             'groupidnumber' => new external_value(PARAM_RAW, 'group id number'),
                             'groupdescription' => new external_value(PARAM_RAW, 'group description'),
+                            'timestart' => new external_value(PARAM_INT, 'timestamp of the start date of the class', VALUE_OPTIONAL),
+                            'timeend' => new external_value(PARAM_INT, 'timestamp of the finish date of the class', VALUE_OPTIONAL),
+                            'tutorname' => new external_value(PARAM_TEXT, 'tutor name', VALUE_OPTIONAL),
+                            'roleid' => new external_value(PARAM_INT, 'id of the role (tutor, non-editing tutor) to assign', VALUE_OPTIONAL),
                             'link_courses' => new external_value(PARAM_INT, 'ARTENA FIELD (1: link courses of same name, 0:treat all as distinct)', VALUE_OPTIONAL),
                         )
                     ), 'groups to create'
@@ -633,7 +643,9 @@ class local_artena_external extends external_api {
                 $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
                 self::log_for_artena('create_group',"GROUP:\n".print_r($existing_group,1));
 
+                $new_tutor = false;
                 if (false === $existing_group) {    // create
+                    $new_tutor = true;
                     $new_group = array();
                     $new_group['courseid'] = $existing_course->id;
                     $new_group['name'] = $group['groupidnumber'];
@@ -646,11 +658,44 @@ class local_artena_external extends external_api {
                 } else {    // update
                     self::log_for_artena('create_group','UPDATE');
                     $existing_group->description = $group['groupdescription'];
-                    self::log_for_artena('create_group',print_r($existing_group,1));
                     $existing_group->descriptionformat = FORMAT_HTML;
+                    self::log_for_artena('create_group',print_r($existing_group,1));
                     groups_update_group((object)$existing_group, false);
 
                     $resultgroups[] = array('id' => $existing_group->id, 'name' => $group['groupidnumber'], 'coursename' => $group['fullname'], 'action'=> 'update');
+                }
+
+                if (('' != $group['tutorname']) && (0 < $group['roleid'])) {
+                    $tutor = $DB->get_record('user', array('username' => $group['tutorname']));
+                    if (false == $new_tutor) {
+                        // check for existing enrolment for this tutor
+                       $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $group['roleid'], 'courseid' => $existing_course->id));
+                        if (false === $enrolment_configuration) {
+                            $new_tutor = true;
+                        } else if (false === ($user_enrolment = $DB->get_record('user_enrolments', array('userid' => $tutor->id, 'enrolid' => $enrolment_configuration->id)))) {
+                            $new_tutor = true;
+                        }
+                    }
+
+                    if (true == $new_tutor) {
+                        // not found, add tutor enrolment
+                        //
+
+                        // Ensure the current user is allowed to run this function in the enrolment context
+                        require_capability('moodle/role:assign', $context);
+                        role_assign($group['roleid'], $tutor->id, $context->id);
+
+                        // retrieve new user_enrolments record to update with start/finish dates
+                        $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $group['roleid'], 'courseid' => $existing_course->id));
+
+                        // Ensure the current user is allowed to run this function in the enrolment context
+                        require_capability('enrol/manual:enrol', $context);
+
+                        // create the user_enrolments record (lib/enrollib.php)
+                        $plugin = enrol_get_plugin('manual');
+                        $plugin->enrol_user($enrolment_configuration, $tutor->id, $group['roleid'], $group['timestart'], $group['timeend']);
+                    }
+
                 }
 
                 $transaction->allow_commit();
@@ -951,7 +996,6 @@ class local_artena_external extends external_api {
 
                     $user['confirmed'] = true;
                     $user['mnethostid'] = $CFG->mnet_localhost_id;
-                    //$user['id'] = user_create_user($user);
                     $user['id'] = self::create_user_record($user);
 
                     // custom fields
@@ -1034,22 +1078,22 @@ class local_artena_external extends external_api {
 		}
 
 		// save the password in a temp value for later
-		if (isset($user->password)) {
-			$userpassword = $user->password;
-			unset($user->password);
-		}
+    if (!empty($user->password)) {
+      if (!is_null($user->password)) {
+        $userpassword = $user->password;
+      }
+      unset($user->properties['password']);
+    }
 
 		$user->timecreated = time();
 		$user->timemodified = $user->timecreated;
 
+self::log_for_artena('create_user', "create_user_record user=\n" . print_r($user, 1));
 		// insert the user into the database
 		$newuserid = $DB->insert_record('user', $user);
 
 		// trigger user_created event on the full database user row if required
 		$newuser = $DB->get_record('user', array('id' => $newuserid));
-        if ($triggerevent) {
-            \core\event\user_created::create_from_userid($newuserid)->trigger();
-        }
 
 		// create USER context for this user
         context_user::instance($newuserid);
@@ -1058,6 +1102,10 @@ class local_artena_external extends external_api {
 		if (isset($userpassword)) {
 			update_internal_user_password($newuser, $userpassword);
 		}
+
+        if ($triggerevent) {
+            \core\event\user_created::create_from_userid($newuserid)->trigger();
+        }
 
 		return $newuserid;
 
@@ -1335,14 +1383,14 @@ class local_artena_external extends external_api {
                     $enrolments[] = array('artenaid' => $assignment['artenaid'], 'username' => $existing_user->username, 'coursename' => $existing_course->fullname, 'action' => 'update');
                 }
 
-                // assign group, if required
+                // assign/unassign group, if required
                 //self::log_for_artena('create_enrol','get group');
+                $existing_memberships = groups_get_user_groups($existing_course->id, $existing_user->id);
                 if (!empty($assignment['groupidnumber'])) {
                     $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $assignment['groupidnumber']));
 
                     self::log_for_artena('create_enrol',print_r($existing_group,1));
                     if (false === $existing_group) {
-                        //throw new Exception('Unknown group: '.$assignment['groupidnumber']);
                         $new_group = array();
                         $new_group['fullname'] = $assignment['fullname'];
                         $new_group['shortname'] = $assignment['shortname'];
@@ -1358,12 +1406,22 @@ class local_artena_external extends external_api {
                             throw new Exception('Unknown group: '.$assignment['groupidnumber']);
                         }
                     }
-                    $existing_memberships = groups_get_user_groups($existing_course->id, $existing_user->id);
-                    foreach ($existing_memberships as $membership) {
-                        if ($membership->id != $existing_group->id)
-                            groups_remove_member($existing_group->id, $existing_user->id);
+                    if (count($existing_memberships)) {
+                        $existing_memberships = $existing_memberships[0];
+                        foreach ($existing_memberships as $membership_id) {
+                            if ($membership_id != $existing_group->id) {
+                                groups_remove_member($membership_id, $existing_user->id);
+                            }
+                        }
                     }
                     groups_add_member($existing_group->id, $existing_user->id);
+                } else {
+                    if (count($existing_memberships)) {
+                        $existing_memberships = $existing_memberships[0];
+                        foreach ($existing_memberships as $membership_id) {
+                            groups_remove_member($membership_id, $existing_user->id);
+                        }
+                    }
                 }
 
                 // reset accessibility/visibility
@@ -1463,6 +1521,8 @@ class local_artena_external extends external_api {
     public static function remove_enrol($assignments) {
         global $CFG, $DB;
         require_once($CFG->libdir . '/enrollib.php');
+        require_once($CFG->dirroot . '/group/lib.php');
+        require_once($CFG->libdir . '/grouplib.php');
 
         // Do basic automatic PARAM checks on incoming data, using params description
         // If any problems are found then exceptions are thrown with helpful error messages
@@ -1518,10 +1578,19 @@ class local_artena_external extends external_api {
 
                     case 'suspend':
                         // Ensure the current user is allowed to run this function in the enrolment context
-                        //self::validate_context($context);
-                        //require_capability('enrol/manual:manage', $context);
+                        require_capability('enrol/manual:manage', $context);
 
+                        // suspend enrolment
                         $DB->set_field('user_enrolments', 'status', ENROL_USER_SUSPENDED, array('enrolid'=>$enrolment_configuration->id, 'userid'=>$existing_user->id));
+
+                        // remove group memberships for this enrolment
+                        $existing_memberships = groups_get_user_groups($existing_course->id, $existing_user->id);
+                        if (count($existing_memberships)) {
+                            $existing_memberships = $existing_memberships[0];
+                            foreach ($existing_memberships as $membership_id) {
+                              groups_remove_member($membership_id, $existing_user->id);
+                            }
+                        }
                         break;
 
                     default:
