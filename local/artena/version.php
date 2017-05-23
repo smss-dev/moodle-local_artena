@@ -25,8 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version   = 2017020707;
-$plugin->release   = 'Artena Plugin Release 1.6.0';
+$plugin->version   = 2017051501;
+$plugin->release   = 'Artena Plugin Release 1.6.1';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2011120500; // Moodle 2.2 release and upwards
 $plugin->component = 'local_artena';
