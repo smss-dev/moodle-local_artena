@@ -668,47 +668,57 @@ class local_artena_external extends external_api {
                 if (('' != $group['tutorname']) && (0 < $group['roleid'])) {
                     $tutor = $DB->get_record('user', array('username' => $group['tutorname']));
 
-                    if (false == $new_tutor) {
-                        self::log_for_artena('create_group',"existing tutor=\n" . print_r($tutor,1));
-                        // check for existing enrolment for this tutor
-                       $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'courseid' => $existing_course->id));
-                        if (false === $enrolment_configuration) {
-                            $new_tutor = true;
-                        } else if (false === ($user_enrolment = $DB->get_record('user_enrolments', array('userid' => $tutor->id, 'enrolid' => $enrolment_configuration->id)))) {
-                            $new_tutor = true;
-                        }
+                    if ($tutor) {
+
+                      if (false == $new_tutor) {
+                          self::log_for_artena('create_group',"existing tutor=\n" . print_r($tutor,1));
+                          // check for existing enrolment for this tutor
+                         $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'courseid' => $existing_course->id));
+                          if (false === $enrolment_configuration) {
+                              $new_tutor = true;
+                          } else if (false === ($user_enrolment = $DB->get_record('user_enrolments', array('userid' => $tutor->id, 'enrolid' => $enrolment_configuration->id)))) {
+                              $new_tutor = true;
+                          }
+                      }
+
+                      if (true == $new_tutor) {
+                          self::log_for_artena('create_group',"new tutor assignment");
+                          self::log_for_artena('create_group',"tutor=\n" . print_r($tutor,1));
+                          self::log_for_artena('create_group',"tutor context=\n" . print_r($context,1));
+                          // not found, add tutor enrolment
+                          //
+
+                          // Ensure the current user is allowed to run this function in the enrolment context
+                          self::log_for_artena('create_group',"t0");
+                          require_capability('moodle/role:assign', $context);
+                          self::log_for_artena('create_group',"t1");
+                          role_assign($group['roleid'], $tutor->id, $context->id);
+                          self::log_for_artena('create_group',"t2");
+
+                          // retrieve new user_enrolments record to update with start/finish dates
+                          //$enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $group['roleid'], 'courseid' => $existing_course->id));
+                          $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'courseid' => $existing_course->id));
+                          self::log_for_artena('create_group',"t3");
+                          self::log_for_artena('create_group',"enrolment configuration=\n" . print_r($enrolment_configuration,1));
+
+                          // Ensure the current user is allowed to run this function in the enrolment context
+                          require_capability('enrol/manual:enrol', $context);
+                          self::log_for_artena('create_group',"t4");
+
+                          // create the user_enrolments record (lib/enrollib.php)
+                          $plugin = enrol_get_plugin('manual');
+                          $plugin->enrol_user($enrolment_configuration, $tutor->id, $group['roleid'], $group['timestart'], $group['timeend']);
+                          self::log_for_artena('create_group',"t5");
+
+                          if (false === $existing_group) {
+                            $existing_group = $DB->get_record('groups', array('courseid' => $existing_course->id, 'name' => $group['groupidnumber']));
+                          }
+                          groups_add_member($existing_group->id, $tutor->id);
+                      }
+                    } else {
+                      // bad tutor reference in object; do not stop group creation
+                      // perhaps send message back in a later release?
                     }
-
-                    if (true == $new_tutor) {
-                        self::log_for_artena('create_group',"new tutor assignment");
-                        self::log_for_artena('create_group',"tutor=\n" . print_r($tutor,1));
-                        self::log_for_artena('create_group',"tutor context=\n" . print_r($context,1));
-                        // not found, add tutor enrolment
-                        //
-
-                        // Ensure the current user is allowed to run this function in the enrolment context
-                        self::log_for_artena('create_group',"t0");
-                        require_capability('moodle/role:assign', $context);
-                        self::log_for_artena('create_group',"t1");
-                        role_assign($group['roleid'], $tutor->id, $context->id);
-                        self::log_for_artena('create_group',"t2");
-
-                        // retrieve new user_enrolments record to update with start/finish dates
-                        //$enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'roleid' => $group['roleid'], 'courseid' => $existing_course->id));
-                        $enrolment_configuration = $DB->get_record('enrol', array('enrol' => 'manual', 'courseid' => $existing_course->id));
-                        self::log_for_artena('create_group',"t3");
-                        self::log_for_artena('create_group',"enrolment configuration=\n" . print_r($enrolment_configuration,1));
-
-                        // Ensure the current user is allowed to run this function in the enrolment context
-                        require_capability('enrol/manual:enrol', $context);
-                        self::log_for_artena('create_group',"t4");
-
-                        // create the user_enrolments record (lib/enrollib.php)
-                        $plugin = enrol_get_plugin('manual');
-                        $plugin->enrol_user($enrolment_configuration, $tutor->id, $group['roleid'], $group['timestart'], $group['timeend']);
-                        self::log_for_artena('create_group',"t5");
-                    }
-
                 }
 
                 $transaction->allow_commit();
@@ -952,6 +962,7 @@ class local_artena_external extends external_api {
                                                              //TODO: move the functions somewhere
                                                              //they are "user" related
 
+        self::log_for_artena('create_user','BEGIN',1);
         // Ensure the current user is allowed to run this function
         $context = context_system::instance();
         require_capability('moodle/user:create', $context);
