@@ -208,13 +208,13 @@ class local_artena_external extends external_api {
         require_once($CFG->dirroot . "/course/lib.php");
         require_once($CFG->libdir . '/completionlib.php');
 
+        self::log_for_artena('create_course', 'BEGIN', 1);
         $params = self::validate_parameters(self::create_course_parameters(),
                         array('courses' => $courses));
 
         $availablethemes = core_component::get_plugin_list('theme');
         $availablelangs = get_string_manager()->get_list_of_translations();
 
-        self::log_for_artena('create_course', 'BEGIN', 1);
         foreach ($params['courses'] as $course) {
             try {
                 self::log_for_artena('create_course', print_r($course,1));
@@ -1430,6 +1430,7 @@ self::log_for_artena('create_user', "create_user_record user=\n" . print_r($user
                             throw new Exception('Unknown group: '.$assignment['groupidnumber']);
                         }
                     }
+					/*
                     if (count($existing_memberships)) {
                         $existing_memberships = $existing_memberships[0];
                         foreach ($existing_memberships as $membership_id) {
@@ -1438,14 +1439,17 @@ self::log_for_artena('create_user', "create_user_record user=\n" . print_r($user
                             }
                         }
                     }
+					*/
                     groups_add_member($existing_group->id, $existing_user->id);
                 } else {
+					/*
                     if (count($existing_memberships)) {
                         $existing_memberships = $existing_memberships[0];
                         foreach ($existing_memberships as $membership_id) {
                             groups_remove_member($membership_id, $existing_user->id);
                         }
                     }
+					*/
                 }
 
                 // reset accessibility/visibility
